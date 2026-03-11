@@ -2,11 +2,12 @@
   "name": "italiancheeseaholic",
   "version": "1.0.0",
   "description": "custom canvas app",
-  "main": "server.js",
+  "main": "server/server.js",
   "type": "module",
   "scripts": {
-    "dev": "nodemon server.js",
-    "start": "node server.js"
+    "dev": "nodemon server/server.js",
+    "start": "node server/server.js"
+    
   },
   "author": "apb",
   "license": "ISC",

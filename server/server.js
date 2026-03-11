@@ -5,15 +5,13 @@ import path from "path";
 import { fileURLToPath } from "url";
 
 import { registerStatic } from "./src/http/static.js";
-
-// Socket handlers
-import { registerAuthHandlers } from "./src/socket/authHandlers.js";
-import { registerFormHandlers } from "./src/socket/formHandlers.js";
-import { registerFormResultsHandlers } from "./src/socket/formResultsHandlers.js";
-import { registerArticleHandlers } from "./src/socket/articleHandlers.js";
-import { registerReportHandlers } from "./src/socket/reportHandlers.js";
-
 import { buildContainer } from "./src/bootstrap/buildContainer.js";
+
+// Backend app modules
+import { registerBackend as registerAuth } from "../shared/auth/registerBackend.js";
+import { registerBackend as registerFormBuilder } from "./src/application/formBuilder/registerBackend.js";
+import { registerBackend as registerDorcas } from "./src/application/dorcasApp/registerBackend.js";
+import { registerBackend as registerBlog } from "./src/application/blog/registerBackend.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -35,28 +33,27 @@ const io = new Server(server, {
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Serve static frontend (index.html + bundles)
+// Serve static frontend
 registerStatic(app);
 
-// Socket.IO handlers
-io.on("connection", (socket) => {
- 
-  registerAuthHandlers(io, socket, { userAuth: container.resolve("userAuth"), authRepository: container.resolve("authRepository") });
-  registerFormHandlers(io, socket, {
-  formService: container.resolve("formService")
-});
+// Register backend modules
+registerAuth(container, io);
+registerFormBuilder(container, io);
+registerDorcas(container, io);
+registerBlog(container, io);
 
-  registerFormResultsHandlers(io, socket);
-  registerArticleHandlers(io, socket);
-  registerReportHandlers(io, socket);
+// Socket.IO connection
+io.on("connection", (socket) => {
+  console.log("User connected:", socket.id);
 
   socket.on("disconnect", () => {
     console.log("User disconnected:", socket.id);
   });
 });
 
+
 // Start server
-const PORT = process.env.PORT || 4500;
+const PORT = process.env.PORT || 4000;
 server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });

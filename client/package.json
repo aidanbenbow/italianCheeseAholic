@@ -1,0 +1,11 @@
+{
+  "name": "canvasapp-client",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "build": "node ./scripts/build.js --build"
+  },
+  "dependencies": {
+    "fs-extra": "^11.2.0"
+  }
+}

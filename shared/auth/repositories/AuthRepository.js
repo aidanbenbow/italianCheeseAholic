@@ -1,0 +1,28 @@
+import { PutCommand, GetCommand } from "@aws-sdk/lib-dynamodb";
+
+export class AuthRepository {
+  constructor(docClient) {
+    this.docClient = docClient;
+    this.tableName = "users";
+  }
+
+  async saveUser(user) {
+    await this.docClient.send(
+      new PutCommand({
+        TableName: this.tableName,
+        Item: user
+      })
+    );
+    return user;
+  }
+
+  async getUser(username) {
+    const result = await this.docClient.send(
+      new GetCommand({
+        TableName: this.tableName,
+        Key: { username }
+      })
+    );
+    return result.Item || null;
+  }
+}
