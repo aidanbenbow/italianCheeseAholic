@@ -1,5 +1,6 @@
-import { NodeFactory } from "../core/NodeFactory.js";
 import { Reconciler } from "../core/reconciler.js";
+import { NodeFactory } from "../core/NodeFactory.js";
+
 import { SceneNode } from "../nodes/sceneNode.js";
 
 export class UIModule {
@@ -20,7 +21,7 @@ export class UIModule {
 
     // Give it to SceneGraphModule
     this.engine.sceneGraph.setRoot(root);
-    this.rootNode = root;
+    this.rootNode = root
   }
 
   render(vnode) {

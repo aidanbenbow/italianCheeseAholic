@@ -1,10 +1,10 @@
-import { Engine } from "../../engine/core/Engine.js";
+import { Engine } from "../engine/core/Engine.js";
 
 
 export async function bootstrapLauncher() {
   console.log("CanvasApp bootstrap running");
 
-  const manifest = await fetch("/runtime.json").then(r => r.json());
+  const manifest = await fetch("/src/runtime.json").then(r => r.json());
   console.log("Loaded manifest:", manifest);
 
   const engine = new Engine({ manifest });

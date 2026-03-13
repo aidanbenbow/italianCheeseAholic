@@ -1,0 +1,8 @@
+{
+  "engineVersion": "1.0.0",
+  "apps": [
+    "blog",
+    "dorcasApp",
+    "formBuilder"
+  ]
+}
