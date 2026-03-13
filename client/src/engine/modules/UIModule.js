@@ -11,7 +11,7 @@ export class UIModule {
     this.oldVNode = null;
   }
 
-  onAttach() {
+  attach() {
     // Create root SceneNode
     const root = new SceneNode({
       id: "root",
@@ -22,6 +22,7 @@ export class UIModule {
     // Give it to SceneGraphModule
     this.engine.sceneGraph.setRoot(root);
     this.rootNode = root
+    console.log("UIModule attached, root node created:", root);
   }
 
   render(vnode) {

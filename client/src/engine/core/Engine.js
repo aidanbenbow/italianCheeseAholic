@@ -22,6 +22,12 @@ export class Engine extends BaseEngine {
       this.sceneGraph,
       this.ui
     ];
+
+    this.lifecycleModules = [
+      this.commands,
+      this.sceneGraph,
+      this.ui
+    ]
   }
 
   start() {
