@@ -61,6 +61,7 @@ export class ToastModule {
         ...options.style
       }
     });
+    console.log("Creating toast:",toast);
     toast.message = message;
 
     this.toasts.set(id, toast);

@@ -19,6 +19,7 @@ export class RendererModule {
   }
 
   attach() {
+   
     // 1. Initialize canvas manager with layer configuration
     this.canvasManager = new CanvasManager({
       main: {

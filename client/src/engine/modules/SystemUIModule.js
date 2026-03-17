@@ -58,17 +58,18 @@ export class SystemUIModule {
     this.toastLayer = ToastModule.create(this.engine);
     this.dropDownLayer = DropdownModule.create(this.engine);
 
-    // Add layers to root (order matters: bottom to top)
-    this.root.add(this.dropDownLayer.root);
-    this.root.add(this.keyboardLayer.root);
-    this.root.add(this.popupLayer.root);
-    this.root.add(this.toastLayer.root);
-
-    // Get system pipeline from renderer and set its root
+    // Attach pipeline FIRST so it is listening before children are added
     const systemPipeline = this.engine.renderer?.getPipeline("system");
     if (systemPipeline) {
       systemPipeline.setRoot(this.root);
       console.log("SystemUIModule: System UI root attached to system pipeline");
+
+      // Add layers AFTER setRoot so pipeline listeners are active when scheduleLayout fires
+      // Order = bottom-to-top: dropdown < keyboard < popup < toast
+      this.root.add(this.dropDownLayer.root);
+      this.root.add(this.keyboardLayer.root);
+      this.root.add(this.popupLayer.root);
+      this.root.add(this.toastLayer.root);
 
       const debugMarker = new SceneNode({
         id: "system-layer-debug-marker",

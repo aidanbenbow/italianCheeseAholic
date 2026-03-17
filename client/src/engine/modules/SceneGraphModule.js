@@ -4,8 +4,20 @@ export class SceneGraphModule {
     this.root = null;
   }
 
+  attach() {
+    if (this.root && this.engine.renderer?.getPipeline) {
+      const mainPipeline = this.engine.renderer.getPipeline("main");
+      mainPipeline?.setRoot?.(this.root);
+    }
+  }
+
   setRoot(node) {
     this.root = node;
+
+    if (this.engine.renderer?.getPipeline) {
+      const mainPipeline = this.engine.renderer.getPipeline("main");
+      mainPipeline?.setRoot?.(node);
+    }
   }
 
   update(dt) {

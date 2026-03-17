@@ -37,6 +37,7 @@ export class RenderPipeline {
     }
   
     setRendererContext(rendererContext) {
+      
       this.rendererContext = rendererContext;
     }
 
@@ -52,6 +53,7 @@ export class RenderPipeline {
         this.root.off("scheduleUpdate", this._scheduleUpdateHandler);
         this.root.off("scheduleRender", this._scheduleRenderHandler);
       }
+      console.log("RenderPipeline: Setting new root node:", rootNode);
 
       // 2. Attach new root
       this.root = rootNode;
@@ -81,8 +83,21 @@ export class RenderPipeline {
       this.scheduleUpdate(rootNode);
       this.scheduleRender(rootNode);
 
-      // 3. Force redraw
+      // 3. Recursively schedule any children already in the tree
+      this._scheduleSubtree(rootNode);
+
+      // 4. Force redraw
       this.invalidate();
+    }
+
+    _scheduleSubtree(node) {
+      if (!node?.children) return;
+      for (const child of node.children) {
+        this.scheduleLayout(child);
+        this.scheduleUpdate(child);
+        this.scheduleRender(child);
+        this._scheduleSubtree(child);
+      }
     }
   
     invalidate() {
@@ -93,8 +108,9 @@ export class RenderPipeline {
       if (!this.root) return;
 
       if (constraints) {
-        this.constraints = constraints;
-        this.currentConstraints = constraints;
+        const normalizedConstraints = normalizeConstraints(constraints);
+        this.constraints = normalizedConstraints;
+        this.currentConstraints = normalizedConstraints;
       }
 
       this.currentFrame += 1;
@@ -402,8 +418,9 @@ export class RenderPipeline {
     }
   
     start(constraints) {
-      this.constraints = constraints;
-      this.currentConstraints = constraints;
+      const normalizedConstraints = normalizeConstraints(constraints);
+      this.constraints = normalizedConstraints;
+      this.currentConstraints = normalizedConstraints;
       if (this.running) return;
       this.running = true;
       let lastTime = performance.now();
@@ -455,12 +472,24 @@ export class RenderPipeline {
         };
       }
 
-      return node.lastLayoutBounds ?? {
-        x: node.bounds?.x ?? 0,
-        y: node.bounds?.y ?? 0,
-        width: node.measured?.width ?? node.bounds?.width ?? 0,
-        height: node.measured?.height ?? node.bounds?.height ?? 0
-      };
+      // Use measured dimensions when available — lastLayoutBounds starts as
+      // {0,0,0,0} so cannot be trusted until at least one successful layout pass.
+      const measuredW = node.measured?.width;
+      const measuredH = node.measured?.height;
+
+      const width = (measuredW != null && measuredW > 0)
+        ? measuredW
+        : (node.lastLayoutBounds?.width ?? node.bounds?.width ?? 0);
+
+      const height = (measuredH != null && measuredH > 0)
+        ? measuredH
+        : (node.lastLayoutBounds?.height ?? node.bounds?.height ?? 0);
+
+      // Prefer explicit style x/y for absolute-positioned nodes (toasts, popups etc.)
+      const x = node.style?.x ?? node.lastLayoutBounds?.x ?? node.bounds?.x ?? 0;
+      const y = node.style?.y ?? node.lastLayoutBounds?.y ?? node.bounds?.y ?? 0;
+
+      return { x, y, width, height };
     }
 
     getDirtyRenderRects() {
@@ -524,6 +553,24 @@ export class RenderPipeline {
       return { x, y, width: panelWidth, height: panelHeight };
     }
   }
+
+function normalizeConstraints(constraints) {
+  if (!constraints) {
+    return { maxWidth: Infinity, maxHeight: Infinity };
+  }
+
+  const maxWidth = Number(
+    constraints.maxWidth ?? constraints.width ?? Infinity
+  );
+  const maxHeight = Number(
+    constraints.maxHeight ?? constraints.height ?? Infinity
+  );
+
+  return {
+    maxWidth: Number.isFinite(maxWidth) ? maxWidth : Infinity,
+    maxHeight: Number.isFinite(maxHeight) ? maxHeight : Infinity
+  };
+}
 
 function ensureSubtreeMeta(node) {
   if (!node) return null;
