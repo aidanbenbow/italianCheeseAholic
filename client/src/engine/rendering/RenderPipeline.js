@@ -633,6 +633,10 @@ function normalizeRect(rect) {
   const width = Number(rect.width ?? 0);
   const height = Number(rect.height ?? 0);
 
+  if (!Number.isFinite(x) || !Number.isFinite(y) || !Number.isFinite(width) || !Number.isFinite(height)) {
+    return null;
+  }
+
   if (width <= 0 || height <= 0) {
     return null;
   }

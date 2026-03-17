@@ -3,6 +3,15 @@ import { NodeFactory } from "../core/NodeFactory.js";
 
 import { SceneNode } from "../nodes/sceneNode.js";
 
+const fullLayerBehavior = {
+  measure(node, constraints) {
+    return {
+      width: constraints?.maxWidth ?? 0,
+      height: constraints?.maxHeight ?? 0
+    };
+  }
+};
+
 export class UIModule {
   constructor(engine) {
     this.engine = engine;
@@ -15,8 +24,8 @@ export class UIModule {
     // Create root SceneNode
     const root = new SceneNode({
       id: "root",
-      behavior: null,
-      style: { width: "100%", height: "100%" }
+      behavior: fullLayerBehavior,
+      style: { x: 0, y: 0 }
     });
 
     // Give it to SceneGraphModule

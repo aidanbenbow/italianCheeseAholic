@@ -23,10 +23,17 @@ console.log(`App "${appName}" loaded:`, appModule);
 
       this.currentApp = appModule;
 
-      this.engine.emit("app:loaded", { name: appName });
+      // Only emit if someone is listening
+      if (this.engine.eventListeners.get("app:loaded")?.size) {
+        this.engine.emit("app:loaded", { name: appName });
+      }
     } catch (err) {
       console.error(`Failed to load app "${appName}"`, err);
-      this.engine.emit("app:error", { name: appName, error: err });
+      
+      // Only emit if someone is listening
+      if (this.engine.eventListeners.get("app:error")?.size) {
+        this.engine.emit("app:error", { name: appName, error: err });
+      }
     }
   }
 

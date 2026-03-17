@@ -56,6 +56,7 @@ export class SceneNode {
 
     this.children.push(child);
     this.requestLayout();
+    child.requestLayout();
   }
 
   remove(child) {
