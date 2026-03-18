@@ -240,11 +240,12 @@ export class RenderPipeline {
             ? { width: node.measured.width, height: node.measured.height }
             : { width: 0, height: 0 };
           const measureConstraints = this.getMeasureConstraints(node);
-          const layoutBounds = this.getLayoutBounds(node, measureConstraints);
 
           const measureStart = now();
           node.measure(measureConstraints, this.rendererContext);
           measureDuration += now() - measureStart;
+
+          const layoutBounds = this.getLayoutBounds(node, measureConstraints);
 
           const layoutStart = now();
           node.layout(layoutBounds, this.rendererContext);

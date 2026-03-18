@@ -1,5 +1,6 @@
-import { Reconciler } from "../core/reconciler.js";
-import { NodeFactory } from "../core/NodeFactory.js";
+import { bind, bindProp, bindStyle, bindText, bindVisible } from "../core/bind.js";
+import { createBoxNode, createTextNode } from "../core/primitives.js";
+import { batch, computed, effect, signal } from "../core/reactive.js";
 
 import { SceneNode } from "../nodes/sceneNode.js";
 
@@ -15,9 +16,10 @@ const fullLayerBehavior = {
 export class UIModule {
   constructor(engine) {
     this.engine = engine;
-    this.nodeFactory = new NodeFactory();
-    this.reconciler = new Reconciler(this.nodeFactory);
-    this.oldVNode = null;
+    this.signal = signal;
+    this.effect = effect;
+    this.computed = computed;
+    this.batch = batch;
   }
 
   attach() {
@@ -30,20 +32,69 @@ export class UIModule {
 
     // Give it to SceneGraphModule
     this.engine.sceneGraph.setRoot(root);
-    this.rootNode = root
+    this.rootNode = root;
     console.log("UIModule attached, root node created:", root);
   }
 
-  render(vnode) {
-    this.oldVNode = this.reconciler.reconcile(
-      this.rootNode,
-      this.oldVNode,
-      vnode
-    );
+  createNode(options = {}) {
+    return new SceneNode({
+      context: this.engine.context,
+      ...options
+    });
+  }
+
+  createBoxNode(options = {}) {
+    return createBoxNode({
+      context: this.engine.context,
+      ...options
+    });
+  }
+
+  createTextNode(options = {}) {
+    return createTextNode({
+      context: this.engine.context,
+      ...options
+    });
+  }
+
+  mountNode(node, parent = this.rootNode) {
+    if (!parent) {
+      throw new Error("UIModule.mountNode: root node is not attached");
+    }
+    parent.add(node);
+    return node;
+  }
+
+  unmountNode(node) {
+    node?.parent?.remove(node);
+  }
+
+  bind(node, fn) {
+    return bind(node, fn);
+  }
+
+  bindProp(node, key, source, options) {
+    return bindProp(node, key, source, options);
+  }
+
+  bindText(node, source, options) {
+    return bindText(node, source, options);
+  }
+
+  bindVisible(node, source, options) {
+    return bindVisible(node, source, options);
+  }
+
+  bindStyle(node, source, options) {
+    return bindStyle(node, source, options);
+  }
+
+  render() {
+    console.warn("UIModule.render(vnode) is deprecated. Use reactive bindings with SceneNodes instead.");
   }
 
   destroy() {
-    this.oldVNode = null;
+    this.rootNode?.disposeSubtree?.();
     this.rootNode = null;
   }
 }

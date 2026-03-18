@@ -29,3 +29,5 @@ engine.start()
  → bootstrap loads first app
  → app.mount(engine)
  → UI renders
+
+ Signals → Effects → SceneNodes → Dirty Pipeline

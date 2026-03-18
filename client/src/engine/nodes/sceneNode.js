@@ -36,6 +36,7 @@ export class SceneNode {
     };
 
     this.emitter = new TinyEmitter();
+    this.disposeCallbacks = new Set();
     this.flags = DIRTY_LAYOUT | DIRTY_RENDER | DIRTY_UPDATE;
     this.lastMeasureConstraints = null;
     this.lastLayoutBounds = null;
@@ -63,9 +64,59 @@ export class SceneNode {
     const i = this.children.indexOf(child);
     if (i >= 0) {
       this.children.splice(i, 1);
+      child.disposeSubtree();
       child.parent = null;
       this.requestLayout();
     }
+  }
+
+  replaceChild(oldChild, newChild) {
+    const index = this.children.indexOf(oldChild);
+    if (index < 0) return;
+
+    if (newChild.parent) {
+      newChild.parent.remove(newChild);
+    }
+
+    oldChild.disposeSubtree();
+    oldChild.parent = null;
+
+    newChild.parent = this;
+    newChild.context ??= this.context;
+    this.children[index] = newChild;
+    this.requestLayout();
+    newChild.requestLayout();
+  }
+
+  onDispose(callback) {
+    if (typeof callback !== "function") {
+      return () => {};
+    }
+
+    this.disposeCallbacks.add(callback);
+    return () => {
+      this.disposeCallbacks.delete(callback);
+    };
+  }
+
+  dispose() {
+    for (const callback of this.disposeCallbacks) {
+      try {
+        callback();
+      } catch (error) {
+        console.error("SceneNode dispose callback failed", error);
+      }
+    }
+
+    this.disposeCallbacks.clear();
+    this.emitter.emit("dispose", { node: this });
+  }
+
+  disposeSubtree() {
+    for (const child of this.children) {
+      child.disposeSubtree();
+    }
+    this.dispose();
   }
 
   findById(id) {
