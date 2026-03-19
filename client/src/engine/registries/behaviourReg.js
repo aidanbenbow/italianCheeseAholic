@@ -1,6 +1,10 @@
 // engine/registries/behaviorRegistry.js
 
 import { DefaultBehavior } from "../nodes/behaviours/defaultBehaviour.js";
+import { ButtonBehavior } from "../nodes/behaviours/buttonBehaviour.js";
+import { VerticalBehavior } from "../nodes/behaviours/verticalBehaviour.js";
+import { TextBehavior } from "../nodes/behaviours/textBehaviour.js";
+import { BoxBehavior } from "../nodes/behaviours/boxBehaviour.js";
 
 
 class BehaviorRegistry {
@@ -26,3 +30,16 @@ class BehaviorRegistry {
 }
 
 export const behaviorRegistry = new BehaviorRegistry();
+
+let coreBehaviorsRegistered = false;
+
+export function registerCoreBehaviours() {
+  if (coreBehaviorsRegistered) return;
+
+  behaviorRegistry.register("button", ButtonBehavior);
+  behaviorRegistry.register("vertical", VerticalBehavior);
+  behaviorRegistry.register("text", TextBehavior);
+  behaviorRegistry.register("box", BoxBehavior);
+
+  coreBehaviorsRegistered = true;
+}

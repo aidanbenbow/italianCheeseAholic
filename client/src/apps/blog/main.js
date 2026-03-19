@@ -10,23 +10,8 @@ export function mount(engine) {
       height: 36,
       background: "#0F172A",
       color: "#b2abab",
-      font: "14px sans-serif"
-    },
-    behavior: {
-      measure(node) {
-        return {
-          width: node.style.width ?? 260,
-          height: node.style.height ?? 36
-        };
-      },
-      render(node, ctx) {
-        ctx.fillStyle = node.style.background ?? "#0F172A";
-        ctx.fillRect(node.bounds.x, node.bounds.y, node.bounds.width, node.bounds.height);
-        ctx.fillStyle = node.style.color ?? "#FFFFFF";
-        ctx.font = node.style.font ?? "14px sans-serif";
-        ctx.textBaseline = "middle";
-        ctx.fillText(node.text ?? "", node.bounds.x + 50, node.bounds.y + node.bounds.height / 2);
-      }
+      font: "14px sans-serif",
+      paddingLeft: 50
     }
   });
 

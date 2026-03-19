@@ -4,7 +4,8 @@ import { attachModules, detachModules } from "../modules/moduleLifecycle.js";
 export class BaseEngine {
   constructor({ id, context, onEngineEvent } = {}) {
     this.id = id;
-    this.context = context;
+    this.context = (context && typeof context === "object") ? context : {};
+    this.context.engine ??= this;
     this.onEngineEvent = onEngineEvent;
     console.log(this.onEngineEvent);
     this.modules = [];

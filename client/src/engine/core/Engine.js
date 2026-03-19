@@ -5,11 +5,15 @@ import { UIModule } from "../modules/UIModule.js";
 import { SceneGraphModule } from "../modules/SceneGraphModule.js";
 import { RendererModule } from "../modules/RendererModule.js";
 import { SystemUIModule } from "../modules/SystemUIModule.js";
+import { behaviorRegistry, registerCoreBehaviours } from "../registries/behaviourReg.js";
 
 
 export class Engine extends BaseEngine {
   constructor(options = {}) {
     super({ id: "engine", ...options });
+    registerCoreBehaviours();
+    this.context.behaviours = behaviorRegistry;
+    this.context.behaviors = behaviorRegistry;
 
     // Create modules
     this.appLoader = new AppLoaderModule(this);

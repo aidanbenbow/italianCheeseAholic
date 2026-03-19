@@ -1,17 +1,11 @@
 import { bind, bindProp, bindStyle, bindText, bindVisible } from "../core/bind.js";
 import { createBoxNode, createTextNode } from "../core/primitives.js";
 import { batch, computed, effect, signal } from "../core/reactive.js";
+import { behaviorRegistry } from "../registries/behaviourReg.js";
 
 import { SceneNode } from "../nodes/sceneNode.js";
 
-const fullLayerBehavior = {
-  measure(node, constraints) {
-    return {
-      width: constraints?.maxWidth ?? 0,
-      height: constraints?.maxHeight ?? 0
-    };
-  }
-};
+const UI_ROOT_VERTICAL_SPACING = 12;
 
 export class UIModule {
   constructor(engine) {
@@ -23,10 +17,17 @@ export class UIModule {
   }
 
   attach() {
+    const RootBehaviorClass = behaviorRegistry.get("vertical");
+    const rootBehavior = new RootBehaviorClass(null);
+    if ("spacing" in rootBehavior) {
+      rootBehavior.spacing = UI_ROOT_VERTICAL_SPACING;
+    }
+
     // Create root SceneNode
     const root = new SceneNode({
       id: "root",
-      behavior: fullLayerBehavior,
+      context: this.engine.context,
+      behavior: rootBehavior,
       style: { x: 0, y: 0 }
     });
 
@@ -87,6 +88,10 @@ export class UIModule {
 
   bindStyle(node, source, options) {
     return bindStyle(node, source, options);
+  }
+
+  registerBehaviour(type, BehaviourClass) {
+    behaviorRegistry.register(type, BehaviourClass);
   }
 
   render() {
