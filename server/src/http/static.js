@@ -29,6 +29,11 @@ export function registerStatic(app) {
 
   // 3. SPA fallback LAST
   app.use((req, res) => {
+    if (req.path.startsWith("/api/")) {
+      res.status(404).json({ ok: false, error: "API route not found" });
+      return;
+    }
+
     res.sendFile(path.join(srcPath, "index.html"));
   });
 }

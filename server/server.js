@@ -33,14 +33,14 @@ const io = new Server(server, {
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Serve static frontend
-registerStatic(app);
-
 // Register backend modules
 registerAuth(container, io);
 registerFormBuilder(container, io);
 registerDorcas(container, io);
-registerBlog(container, io);
+registerBlog(container, io, app);
+
+// Serve static frontend (after API routes)
+registerStatic(app);
 
 // Socket.IO connection
 io.on("connection", (socket) => {
