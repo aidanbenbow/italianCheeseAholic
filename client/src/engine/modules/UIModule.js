@@ -1,5 +1,5 @@
 import { bind, bindProp, bindStyle, bindText, bindVisible } from "../core/bind.js";
-import { createBoxNode, createTextNode } from "../core/primitives.js";
+import { createBoxNode, createButtonNode, createInputNode, createTextNode } from "../core/primitives.js";
 import { batch, computed, effect, signal } from "../core/reactive.js";
 import { behaviorRegistry } from "../registries/behaviourReg.js";
 
@@ -53,6 +53,20 @@ export class UIModule {
 
   createTextNode(options = {}) {
     return createTextNode({
+      context: this.engine.context,
+      ...options
+    });
+  }
+
+  createInputNode(options = {}) {
+    return createInputNode({
+      context: this.engine.context,
+      ...options
+    });
+  }
+
+  createButtonNode(options = {}) {
+    return createButtonNode({
       context: this.engine.context,
       ...options
     });

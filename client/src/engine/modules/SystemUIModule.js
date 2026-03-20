@@ -90,7 +90,7 @@ export class SystemUIModule {
       console.warn("SystemUIModule: Could not get system pipeline from renderer");
     }
 
-    console.log("SystemUIModule attached");
+    console.log("SystemUIModule attached", this.root);
   }
 
   detach() {

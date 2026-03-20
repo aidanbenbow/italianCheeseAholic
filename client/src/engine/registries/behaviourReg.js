@@ -5,6 +5,7 @@ import { ButtonBehavior } from "../nodes/behaviours/buttonBehaviour.js";
 import { VerticalBehavior } from "../nodes/behaviours/verticalBehaviour.js";
 import { TextBehavior } from "../nodes/behaviours/textBehaviour.js";
 import { BoxBehavior } from "../nodes/behaviours/boxBehaviour.js";
+import { InputBehavior } from "../nodes/behaviours/inputBehaviour.js";
 
 
 class BehaviorRegistry {
@@ -40,6 +41,7 @@ export function registerCoreBehaviours() {
   behaviorRegistry.register("vertical", VerticalBehavior);
   behaviorRegistry.register("text", TextBehavior);
   behaviorRegistry.register("box", BoxBehavior);
+  behaviorRegistry.register("input", InputBehavior);
 
   coreBehaviorsRegistered = true;
 }

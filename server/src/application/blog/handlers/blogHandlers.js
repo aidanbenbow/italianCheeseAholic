@@ -32,6 +32,30 @@ export function registerBlogHandlers(io, container) {
 }
 
 export function registerBlogHttpRoutes(app, container) {
+  app.post("/api/blog/articles", async (req, res) => {
+    try {
+      const blogService = container.resolve("blogService");
+      const rawTitle = typeof req.body?.title === "string" ? req.body.title : "";
+      const title = rawTitle.trim();
+
+      if (!title) {
+        res.status(400).json({ ok: false, error: "title is required" });
+        return;
+      }
+
+      const article = {
+        articleId: req.body?.articleId || `article-${Date.now()}`,
+        title,
+        createdAt: req.body?.createdAt || new Date().toISOString()
+      };
+
+      const created = await blogService.create(article);
+      res.status(201).json({ ok: true, data: created });
+    } catch (error) {
+      res.status(500).json({ ok: false, error: error?.message ?? "Failed to create article" });
+    }
+  });
+
   app.get("/api/blog/articles", async (_req, res) => {
     try {
       const blogService = container.resolve("blogService");

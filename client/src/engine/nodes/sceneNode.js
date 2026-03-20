@@ -205,6 +205,26 @@ export class SceneNode {
   off(type, fn) { this.emitter.off(type, fn); }
   emit(type, payload) { this.emitter.emit(type, payload); }
 
+  onPointerEnter() {
+    this.behavior?.onPointerEnter?.(this);
+  }
+
+  onPointerLeave() {
+    this.behavior?.onPointerLeave?.(this);
+  }
+
+  onPointerDown(x, y) {
+    this.behavior?.onPointerDown?.(this, x, y);
+  }
+
+  onPointerUp(x, y) {
+    this.behavior?.onPointerUp?.(this, x, y);
+  }
+
+  onPointerDoubleClick(x, y) {
+    this.behavior?.onPointerDoubleClick?.(this, x, y);
+  }
+
   getRoot() {
     let node = this;
     while (node?.parent) {
