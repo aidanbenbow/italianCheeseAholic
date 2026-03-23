@@ -78,6 +78,7 @@ export class Engine extends BaseEngine {
     ctx.commands = null;
     ctx.ui = null;
     ctx.systemUI = null;
+    ctx.textEditor = null;
     ctx.editor = null;
 
     ctx.selection = null;

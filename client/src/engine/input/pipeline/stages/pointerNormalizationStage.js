@@ -2,9 +2,11 @@ import { InputPipelineStage } from "../inputPipelineStage.js";
 
 export class PointerNormalizationStage extends InputPipelineStage {
   constructor({ canvas, scenePipeline, hitTest, config } = {}) {
-    super({ pipeline: scenePipeline, config });
+    super({ config });
     this.canvas = canvas;
+    this.scenePipeline = scenePipeline;
     this.hitTest = hitTest;
+    this.lastPointerPositions = new Map();
   }
 
   process(event) {
@@ -12,6 +14,7 @@ export class PointerNormalizationStage extends InputPipelineStage {
 
     const domEvent = event.domEvent;
     const normalized = this._normalize(domEvent, event.type);
+    if (!normalized) return null;
 
     return {
       stage: "pointer-normalized",
@@ -21,20 +24,141 @@ export class PointerNormalizationStage extends InputPipelineStage {
   }
 
   _normalize(domEvent, rawType) {
-    // map mouse/touch → pointer
-    // compute clientX/clientY
-    // convert to canvas coords
-    // convert to scene coords
-    // perform hit-test once
+    const sample = this._extractPointerSample(domEvent, rawType);
+    if (!sample) return null;
+
+    const canvasPoint = this._toCanvasCoords(sample.clientX, sample.clientY);
+    const scenePoint = this._toSceneCoords(canvasPoint.x, canvasPoint.y);
+    const delta = this._computeDelta(sample.pointerId, scenePoint.x, scenePoint.y, sample.deltaX, sample.deltaY);
+    const target = this._resolveTarget(scenePoint.x, scenePoint.y);
+
+    this.lastPointerPositions.set(sample.pointerId, { x: scenePoint.x, y: scenePoint.y });
+
+    if (sample.type === "pointerup" || sample.type === "pointercancel") {
+      this.lastPointerPositions.delete(sample.pointerId);
+    }
+
+    return {
+      pointerId: sample.pointerId,
+      pointerType: sample.pointerType,
+      type: sample.type,
+      x: scenePoint.x,
+      y: scenePoint.y,
+      canvasX: canvasPoint.x,
+      canvasY: canvasPoint.y,
+      clientX: sample.clientX,
+      clientY: sample.clientY,
+      deltaX: delta.x,
+      deltaY: delta.y,
+      target,
+      button: sample.button,
+      buttons: sample.buttons,
+      pressure: sample.pressure,
+      rawType
+    };
+  }
+
+  _extractPointerSample(domEvent, rawType) {
+    if (!domEvent) return null;
+
+    if (rawType.startsWith("touch")) {
+      const touch = domEvent.changedTouches?.[0] ?? domEvent.touches?.[0];
+      if (!touch) return null;
+
+      return {
+        pointerId: touch.identifier ?? 0,
+        pointerType: "touch",
+        type: this._mapRawType(rawType),
+        clientX: touch.clientX,
+        clientY: touch.clientY,
+        deltaX: 0,
+        deltaY: 0,
+        button: 0,
+        buttons: rawType === "touchend" ? 0 : 1,
+        pressure: rawType === "touchend" ? 0 : 0.5
+      };
+    }
+
     return {
       pointerId: 1,
       pointerType: "mouse",
-      type: "pointermove", // etc
-      x: 0,
-      y: 0,
-      deltaX: 0,
-      deltaY: 0,
-      target: null
+      type: this._mapRawType(rawType),
+      clientX: domEvent.clientX ?? 0,
+      clientY: domEvent.clientY ?? 0,
+      deltaX: domEvent.deltaX ?? domEvent.movementX ?? 0,
+      deltaY: domEvent.deltaY ?? domEvent.movementY ?? 0,
+      button: domEvent.button ?? 0,
+      buttons: domEvent.buttons ?? 0,
+      pressure: domEvent.buttons ? 0.5 : 0
     };
+  }
+
+  _mapRawType(rawType) {
+    switch (rawType) {
+      case "mousedown":
+      case "touchstart":
+        return "pointerdown";
+      case "mousemove":
+      case "touchmove":
+        return "pointermove";
+      case "mouseup":
+      case "touchend":
+        return "pointerup";
+      case "wheel":
+        return "wheel";
+      default:
+        return rawType;
+    }
+  }
+
+  _toCanvasCoords(clientX, clientY) {
+    const rect = this.canvas?.getBoundingClientRect?.();
+    if (!rect || rect.width === 0 || rect.height === 0) {
+      return { x: 0, y: 0 };
+    }
+
+    const scaleX = this.canvas.width / rect.width;
+    const scaleY = this.canvas.height / rect.height;
+
+    return {
+      x: (clientX - rect.left) * scaleX,
+      y: (clientY - rect.top) * scaleY
+    };
+  }
+
+  _toSceneCoords(canvasX, canvasY) {
+    const canvasManager = this.scenePipeline?.renderManager?.canvasManager;
+    if (canvasManager?.toSceneCoords) {
+      return canvasManager.toSceneCoords("main", canvasX, canvasY);
+    }
+
+    return { x: canvasX, y: canvasY };
+  }
+
+  _computeDelta(pointerId, x, y, fallbackDeltaX = 0, fallbackDeltaY = 0) {
+    const previous = this.lastPointerPositions.get(pointerId);
+    if (!previous) {
+      return {
+        x: fallbackDeltaX,
+        y: fallbackDeltaY
+      };
+    }
+
+    return {
+      x: x - previous.x,
+      y: y - previous.y
+    };
+  }
+
+  _resolveTarget(sceneX, sceneY) {
+    const root = this.scenePipeline?.root;
+    if (!root || !this.hitTest?.hitTest) return null;
+
+    return this.hitTest.hitTest(
+      root,
+      sceneX,
+      sceneY,
+      this.scenePipeline?.rendererContext
+    );
   }
 }

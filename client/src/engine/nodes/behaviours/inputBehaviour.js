@@ -1,20 +1,39 @@
+// /scene/behaviours/InputBehavior.js
+
 import { Behavior } from "./Behaviour.js";
 
 export class InputBehavior extends Behavior {
   measure(node, constraints, ctx) {
     const style = node.style ?? {};
-    const font = style.font ?? "14px sans-serif";
-    const text = String(node.value ?? node.placeholder ?? "");
+    const font = node.text?.font ?? style.font ?? "14px sans-serif";
+    const text = node.text?.getDisplayValue() ?? "";
 
     const maxWidth = Number.isFinite(constraints?.maxWidth) ? constraints.maxWidth : Infinity;
     const maxHeight = Number.isFinite(constraints?.maxHeight) ? constraints.maxHeight : Infinity;
 
     const intrinsic = measureText(text, font, ctx);
-    const horizontalPadding = toFinite(style.paddingLeft, 0) + toFinite(style.paddingRight, 0) + toFinite(style.paddingX, 0) * 2;
-    const verticalPadding = toFinite(style.paddingTop, 0) + toFinite(style.paddingBottom, 0) + toFinite(style.paddingY, 0) * 2;
 
-    const width = clamp(toFinite(style.width, intrinsic.width + horizontalPadding + 24), toFinite(style.minWidth, 120), maxWidth);
-    const height = clamp(toFinite(style.height, Math.max(34, intrinsic.height + verticalPadding)), toFinite(style.minHeight, 34), maxHeight);
+    const paddingX =
+      toFinite(style.paddingLeft, 0) +
+      toFinite(style.paddingRight, 0) +
+      toFinite(style.paddingX, 0) * 2;
+
+    const paddingY =
+      toFinite(style.paddingTop, 0) +
+      toFinite(style.paddingBottom, 0) +
+      toFinite(style.paddingY, 0) * 2;
+
+    const width = clamp(
+      toFinite(style.width, intrinsic.width + paddingX),
+      toFinite(style.minWidth, 120),
+      maxWidth
+    );
+
+    const height = clamp(
+      toFinite(style.height, intrinsic.height + paddingY),
+      toFinite(style.minHeight, 34),
+      maxHeight
+    );
 
     return { width, height };
   }
@@ -24,62 +43,43 @@ export class InputBehavior extends Behavior {
     const style = node.style ?? {};
     const focused = Boolean(node.focused);
 
+    // Background
     ctx.fillStyle = style.background ?? "#111827";
     ctx.fillRect(x, y, width, height);
 
+    // Border
     ctx.lineWidth = style.borderWidth ?? 1;
     ctx.strokeStyle = focused
       ? (style.focusBorderColor ?? "#60A5FA")
       : (style.borderColor ?? "#374151");
     ctx.strokeRect(x, y, width, height);
 
-    const contentX = x + toFinite(style.paddingLeft, 10) + toFinite(style.paddingX, 0);
-    const contentY = y + toFinite(style.paddingTop, 0) + toFinite(style.paddingY, 0);
-    const contentHeight = height - (toFinite(style.paddingTop, 0) + toFinite(style.paddingBottom, 0) + toFinite(style.paddingY, 0) * 2);
+    // Text
+    const text = node.text?.getDisplayValue() ?? "";
+    const isPlaceholder = text === node.text.placeholder;
 
-    const text = String(node.value ?? "");
-    const isEmpty = text.length === 0;
-
-    ctx.font = style.font ?? "14px sans-serif";
+    ctx.font = node.text?.font ?? style.font ?? "14px sans-serif";
     ctx.textBaseline = "middle";
     ctx.textAlign = "left";
-    ctx.fillStyle = isEmpty ? (style.placeholderColor ?? "#6B7280") : (style.color ?? "#F9FAFB");
-    ctx.fillText(isEmpty ? String(node.placeholder ?? "") : text, contentX, contentY + contentHeight / 2);
-  }
+    ctx.fillStyle = isPlaceholder
+      ? (style.placeholderColor ?? "#6B7280")
+      : (style.color ?? "#F9FAFB");
 
-  onPointerDown(node) {
-    node.focused = true;
-    node.requestRender();
-  }
+    const paddingX =
+      toFinite(style.paddingLeft, 10) + toFinite(style.paddingX, 0);
 
-  onPointerLeave(node) {
-    if (!node.pressed) return;
-    node.pressed = false;
-    node.requestRender();
-  }
+    const paddingY =
+      toFinite(style.paddingTop, 0) + toFinite(style.paddingY, 0);
 
-  onPointerUp(node) {
-    node.focused = true;
+    const contentY = y + paddingY + (height - paddingY * 2) / 2;
 
-    const promptLabel = node.promptLabel ?? node.placeholder ?? "Enter value";
-    const currentValue = String(node.value ?? "");
-
-    if (typeof node.onRequestInput === "function") {
-      node.onRequestInput({ node, promptLabel, currentValue });
-      return;
-    }
-
-    if (typeof window !== "undefined" && typeof window.prompt === "function") {
-      const nextValue = window.prompt(promptLabel, currentValue);
-      if (nextValue !== null) {
-        node.value = nextValue;
-        node.requestLayout();
-      }
-    }
-
-    node.requestRender();
+    ctx.fillText(text, x + paddingX, contentY);
   }
 }
+
+// -------------------------------------------------------
+// Utilities
+// -------------------------------------------------------
 
 function measureText(text, font, ctx) {
   if (!ctx) {
@@ -93,7 +93,9 @@ function measureText(text, font, ctx) {
   ctx.restore();
 
   const size = parseFontSize(font);
-  const height = (metrics.actualBoundingBoxAscent ?? size * 0.8) + (metrics.actualBoundingBoxDescent ?? size * 0.2);
+  const height =
+    (metrics.actualBoundingBoxAscent ?? size * 0.8) +
+    (metrics.actualBoundingBoxDescent ?? size * 0.2);
 
   return { width: metrics.width, height };
 }

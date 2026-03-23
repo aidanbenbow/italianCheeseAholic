@@ -225,6 +225,18 @@ export class SceneNode {
     this.behavior?.onPointerDoubleClick?.(this, x, y);
   }
 
+  onEvent(event) {
+    return this.behavior?.onEvent?.(this, event) ?? false;
+  }
+
+  onEventCapture(event) {
+    return this.behavior?.onEventCapture?.(this, event) ?? false;
+  }
+
+  onEventBubble(event) {
+    return this.behavior?.onEventBubble?.(this, event) ?? false;
+  }
+
   getRoot() {
     let node = this;
     while (node?.parent) {

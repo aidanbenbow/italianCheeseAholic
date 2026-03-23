@@ -4,6 +4,7 @@ export class CommandRegistryModule extends BaseModule {
   constructor(engine) {
     super(engine);
     this.commands = new Map();
+    this.devCommandNames = new Set();
   }
 
   contextExports() {
@@ -20,6 +21,19 @@ export class CommandRegistryModule extends BaseModule {
 
     this.commands.set(name, handler);
     this.engine.emit("command:registered", { name });
+  }
+
+  attach() {
+    if (!this._isDevMode()) return;
+
+    this.register("debug:inputPipeline", () => {
+      const snapshot = this.engine.context.input?.pipeline?.debugSnapshot?.() ?? [];
+      console.table(snapshot);
+      this.engine.emit("debug:inputPipeline", { snapshot });
+      return snapshot;
+    });
+
+    this.devCommandNames.add("debug:inputPipeline");
   }
 
   unregister(name) {
@@ -45,7 +59,24 @@ export class CommandRegistryModule extends BaseModule {
     }
   }
 
+  detach() {
+    for (const name of this.devCommandNames) {
+      this.unregister(name);
+    }
+    this.devCommandNames.clear();
+  }
+
+  _isDevMode() {
+    if (this.engine.context.debugFlags?.devCommands === true) {
+      return true;
+    }
+
+    const host = globalThis?.location?.hostname;
+    return host === "localhost" || host === "127.0.0.1";
+  }
+
   destroy() {
+    this.detach();
     this.commands.clear();
   }
 }

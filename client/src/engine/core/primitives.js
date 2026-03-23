@@ -1,4 +1,5 @@
 import { SceneNode } from "../nodes/sceneNode.js";
+import { InputNode } from "../nodes/inputNode.js";
 import { behaviorRegistry } from "../registries/behaviourReg.js";
 
 export function createBoxNode(options = {}) {
@@ -29,10 +30,9 @@ export function createTextNode(options = {}) {
 }
 
 export function createInputNode(options = {}) {
-  const node = new SceneNode({
+  const node = new InputNode({
     visible: true,
     ...options,
-    behavior: options.behavior ?? createBehaviorFromRegistry("input"),
     style: {
       width: 320,
       height: 40,
@@ -44,17 +44,13 @@ export function createInputNode(options = {}) {
       font: "14px sans-serif",
       paddingLeft: 10,
       ...options.style
-    }
+    },
+    behavior: options.behavior ?? createBehaviorFromRegistry("input"),
+    value: options.value ?? "",
+    placeholder: options.placeholder ?? "Enter text",
+    promptLabel: options.promptLabel ?? options.placeholder ?? "Enter text",
+    onRequestInput: options.onRequestInput
   });
-
-  node.value = options.value ?? "";
-  node.placeholder = options.placeholder ?? "Enter text";
-  node.promptLabel = options.promptLabel ?? node.placeholder;
-  node.focused = false;
-
-  if (typeof options.onRequestInput === "function") {
-    node.onRequestInput = options.onRequestInput;
-  }
 
   return node;
 }

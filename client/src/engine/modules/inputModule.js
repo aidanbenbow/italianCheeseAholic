@@ -7,6 +7,7 @@ import { SceneEventDispatchStage } from "../input/pipeline/stages/sceneEventDisp
 import { SceneEventSynthesisStage } from "../input/pipeline/stages/sceneEventSynthesisStage.js";
 import { SceneHitTestSystem } from "../input/sceneHitTestSystem.js";
 import { SceneEventDispatcher } from "../input/sceneEventDispatcher.js";
+import { TextEditorController } from "../input/textEditorController.js";
 import { BaseModule } from "./BaseModule.js";
 
 export class InputModule extends BaseModule {
@@ -18,6 +19,7 @@ export class InputModule extends BaseModule {
     this.hitTest = new SceneHitTestSystem();
     this.dispatcher = new SceneEventDispatcher();
     this.pointerState = new PointerState();
+    this.textEditor = new TextEditorController(engine);
 
     this.pipeline = new InputPipeline();
   }
@@ -27,7 +29,9 @@ export class InputModule extends BaseModule {
       input: this,
       pointerState: this.pointerState,
       hitTest: this.hitTest,
-      eventDispatcher: this.dispatcher
+      eventDispatcher: this.dispatcher,
+      textEditor: this.textEditor,
+      editor: this.textEditor
     };
   }
 
@@ -39,6 +43,9 @@ export class InputModule extends BaseModule {
       console.warn("InputModule: main canvas is unavailable; input pipeline was not attached");
       return;
     }
+
+    this.engine.context.textEditor = this.textEditor;
+    this.engine.context.editor = this.textEditor;
 
     this._setupStages();
   }
@@ -76,6 +83,9 @@ export class InputModule extends BaseModule {
 
   detach() {
     this.pipeline.setStages([]);
+    this.textEditor?.stopEditing?.();
+    this.engine.context.textEditor = null;
+    this.engine.context.editor = null;
     this.canvas = null;
     this.scenePipeline = null;
   }

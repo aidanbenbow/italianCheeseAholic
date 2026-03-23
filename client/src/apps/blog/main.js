@@ -61,6 +61,8 @@ export function mount(engine) {
     node.requestRender();
   });
 
+  engine.commands.execute('debug:inputPipeline');
+
   loadArticles();
   engine.systemUI.toastLayer.show("Welcome!");
 
