@@ -6,19 +6,39 @@ import { RawInputStage } from "../input/pipeline/stages/rawInputStage.js";
 import { SceneEventDispatchStage } from "../input/pipeline/stages/sceneEventDispatchStage.js";
 import { SceneEventSynthesisStage } from "../input/pipeline/stages/sceneEventSynthesisStage.js";
 import { SceneHitTestSystem } from "../input/sceneHitTestSystem.js";
+import { SceneEventDispatcher } from "../input/sceneEventDispatcher.js";
+import { BaseModule } from "./BaseModule.js";
 
-export class InputModule {
+export class InputModule extends BaseModule {
   constructor(engine) {
-   this.engine = engine;
-
-    this.canvas = engine.context.canvas;
-    this.scenePipeline = engine.renderer.pipeline; // or wherever toSceneCoords lives
+    super(engine);
+    this.canvas = null;
+    this.scenePipeline = null;
 
     this.hitTest = new SceneHitTestSystem();
-    this.dispatcher = new SceneEventDispatchStage();
+    this.dispatcher = new SceneEventDispatcher();
     this.pointerState = new PointerState();
 
     this.pipeline = new InputPipeline();
+  }
+
+  contextExports() {
+    return {
+      input: this,
+      pointerState: this.pointerState,
+      hitTest: this.hitTest,
+      eventDispatcher: this.dispatcher
+    };
+  }
+
+  attach() {
+    this.canvas = this.engine.context.canvasManager?.getCanvas?.("main") ?? null;
+    this.scenePipeline = this.engine.context.renderPipelines?.main ?? null;
+
+    if (!this.canvas) {
+      console.warn("InputModule: main canvas is unavailable; input pipeline was not attached");
+      return;
+    }
 
     this._setupStages();
   }
@@ -54,15 +74,9 @@ export class InputModule {
     ]);
   }
 
-  mount() {
-    // If needed, attach overlays or editor tools here
-  }
-
-  update(dt) {
-    // If scroll momentum or gesture plugins need ticking, do it here
-  }
-
-  destroy() {
-    // Unbind DOM listeners, cleanup
+  detach() {
+    this.pipeline.setStages([]);
+    this.canvas = null;
+    this.scenePipeline = null;
   }
 }

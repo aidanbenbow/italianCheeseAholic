@@ -14,6 +14,50 @@ export class BaseEngine {
     this.isMounted = false;
   }
 
+  resolveContextExports(module) {
+    if (!module) return {};
+
+    const declaration =
+      module.contextExports ??
+      module.constructor?.contextExports;
+
+    if (!declaration) return {};
+
+    if (typeof declaration === "function") {
+      const resolved = declaration.call(module, this.context);
+      return (resolved && typeof resolved === "object") ? resolved : {};
+    }
+
+    return (typeof declaration === "object") ? declaration : {};
+  }
+
+  registerModule(module) {
+    if (!module) return;
+
+    this.context.modules ??= {};
+
+    const moduleId =
+      module.id ??
+      module.name ??
+      module.constructor?.moduleName ??
+      module.constructor?.name;
+
+    if (moduleId) {
+      this.context.modules[moduleId] = module;
+    }
+
+    const contextExports = this.resolveContextExports(module);
+    for (const [key, value] of Object.entries(contextExports)) {
+      this.context[key] = value;
+    }
+  }
+
+  registerModules(modules = []) {
+    for (const module of modules) {
+      this.registerModule(module);
+    }
+  }
+
   mount() {
     console.log(`[${this.id}] Mounting engine...`);
     this.attachModules(this.lifecycleModules);

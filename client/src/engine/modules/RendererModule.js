@@ -1,6 +1,7 @@
 import { CanvasManager } from "../utils/canvasManager.js";
 import { RenderManager } from "../utils/renderManager.js";
 import { RenderPipeline } from "../rendering/RenderPipeline.js";
+import { BaseModule } from "./BaseModule.js";
 
 /**
  * RendererModule manages multi-layer canvas rendering:
@@ -10,12 +11,21 @@ import { RenderPipeline } from "../rendering/RenderPipeline.js";
  * - debug: Debug overlays (performance metrics)
  * - hit: Invisible hit-test feedback layer
  */
-export class RendererModule {
+export class RendererModule extends BaseModule {
   constructor(engine) {
-    this.engine = engine;
+    super(engine);
     this.canvasManager = null;
     this.renderManager = null;
     this.pipelines = {};
+  }
+
+  contextExports() {
+    return {
+      renderer: this,
+      canvasManager: this.canvasManager,
+      renderManager: this.renderManager,
+      renderPipelines: this.pipelines
+    };
   }
 
   attach() {
@@ -44,11 +54,16 @@ export class RendererModule {
     // 2. Initialize render manager
     this.renderManager = new RenderManager(this.canvasManager, null);
 
+    this.engine.context.canvasManager = this.canvasManager;
+    this.engine.context.renderManager = this.renderManager;
+
     // 3. Create render pipelines for each layer
     this.pipelines.main = new RenderPipeline(this.renderManager);
     this.pipelines.system = new RenderPipeline(this.renderManager);
     this.pipelines.interaction = new RenderPipeline(this.renderManager);
     this.pipelines.debug = new RenderPipeline(this.renderManager);
+
+    this.engine.context.renderPipelines = this.pipelines;
 
     this.pipelines.main.debugSubtreeScheduling = false;
     this.pipelines.system.debugSubtreeScheduling = false;
@@ -89,8 +104,13 @@ export class RendererModule {
     }
 
     this.pipelines = {};
+    this.engine.context.renderPipelines = {};
+
     this.renderManager = null;
+    this.engine.context.renderManager = null;
+
     this.canvasManager = null;
+    this.engine.context.canvasManager = null;
 
     console.log("RendererModule detached");
   }

@@ -4,13 +4,13 @@ import { Engine } from "../engine/core/Engine.js";
 export async function bootstrapLauncher() {
   console.log("CanvasApp bootstrap running");
 
-  const manifest = await fetch("/src/runtime.json").then(r => r.json());
-  console.log("Loaded manifest:", manifest);
+  const engine = new Engine();
 
-  const engine = new Engine({ manifest });
-  console.log("Engine created:", engine);
+  // Start the engine
   engine.start();
 
-  const firstApp = manifest.apps[0];
-  engine.appLoader.loadApp(firstApp);
+  // Load the manifest
+  await engine.launcher.loadManifest('/src/runtime.json');
+  // Launch the default app
+  await engine.launcher.launchDefaultApp();
 }

@@ -3,6 +3,7 @@ import { PopupModule } from "./systemUi/PopupModule.js";
 import { KeyboardModule } from "./systemUi/KeyboardModule.js";
 import { ToastModule } from "./systemUi/ToastModule.js";
 import { DropdownModule } from "./systemUi/DropdownModule.js";
+import { BaseModule } from "./BaseModule.js";
 
 const fullLayerBehavior = {
   measure(node, constraints) {
@@ -27,9 +28,9 @@ const debugMarkerBehavior = {
   }
 };
 
-export class SystemUIModule {
+export class SystemUIModule extends BaseModule {
   constructor(engine) {
-    this.engine = engine;
+    super(engine);
     this.root = null;
     
     // System UI sub-modules
@@ -37,6 +38,12 @@ export class SystemUIModule {
     this.keyboardLayer = null;
     this.toastLayer = null;
     this.dropDownLayer = null;
+  }
+
+  contextExports() {
+    return {
+      systemUI: this
+    };
   }
 
   attach() {

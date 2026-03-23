@@ -1,7 +1,15 @@
-export class SceneGraphModule {
+import { BaseModule } from "./BaseModule.js";
+
+export class SceneGraphModule extends BaseModule {
   constructor(engine) {
-    this.engine = engine;
+    super(engine);
     this.root = null;
+  }
+
+  contextExports() {
+    return {
+      sceneGraph: this
+    };
   }
 
   attach() {

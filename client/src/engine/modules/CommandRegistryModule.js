@@ -1,7 +1,15 @@
-export class CommandRegistryModule {
+import { BaseModule } from "./BaseModule.js";
+
+export class CommandRegistryModule extends BaseModule {
   constructor(engine) {
-    this.engine = engine;
+    super(engine);
     this.commands = new Map();
+  }
+
+  contextExports() {
+    return {
+      commands: this
+    };
   }
 
   register(name, handler) {

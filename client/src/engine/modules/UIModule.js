@@ -2,18 +2,25 @@ import { bind, bindProp, bindStyle, bindText, bindVisible } from "../core/bind.j
 import { createBoxNode, createButtonNode, createInputNode, createTextNode } from "../core/primitives.js";
 import { batch, computed, effect, signal } from "../core/reactive.js";
 import { behaviorRegistry } from "../registries/behaviourReg.js";
+import { BaseModule } from "./BaseModule.js";
 
 import { SceneNode } from "../nodes/sceneNode.js";
 
 const UI_ROOT_VERTICAL_SPACING = 12;
 
-export class UIModule {
+export class UIModule extends BaseModule {
   constructor(engine) {
-    this.engine = engine;
+    super(engine);
     this.signal = signal;
     this.effect = effect;
     this.computed = computed;
     this.batch = batch;
+  }
+
+  contextExports() {
+    return {
+      ui: this
+    };
   }
 
   attach() {

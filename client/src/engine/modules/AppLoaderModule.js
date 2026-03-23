@@ -1,7 +1,16 @@
-export class AppLoaderModule {
+import { BaseModule } from "./BaseModule.js";
+
+export class AppLoaderModule extends BaseModule {
   constructor(engine) {
-    this.engine = engine;
+    super(engine);
     this.currentApp = null;
+  }
+
+  contextExports() {
+    return {
+      appLoader: this,
+      activeApp: this.currentApp
+    };
   }
 
   async loadApp(appName) {
@@ -22,6 +31,7 @@ console.log(`App "${appName}" loaded:`, appModule);
       }
 
       this.currentApp = appModule;
+      this.engine.context.activeApp = this.currentApp;
 
       // Only emit if someone is listening
       if (this.engine.eventListeners.get("app:loaded")?.size) {
@@ -42,5 +52,6 @@ console.log(`App "${appName}" loaded:`, appModule);
       this.currentApp.unmount(this.engine);
     }
     this.currentApp = null;
+    this.engine.context.activeApp = null;
   }
 }
