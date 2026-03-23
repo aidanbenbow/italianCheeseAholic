@@ -6,6 +6,7 @@ import { SceneGraphModule } from "../modules/SceneGraphModule.js";
 import { RendererModule } from "../modules/RendererModule.js";
 import { SystemUIModule } from "../modules/SystemUIModule.js";
 import { behaviorRegistry, registerCoreBehaviours } from "../registries/behaviourReg.js";
+import { InputModule } from "../modules/inputModule.js";
 
 
 export class Engine extends BaseEngine {
@@ -22,6 +23,7 @@ export class Engine extends BaseEngine {
     this.renderer = new RendererModule(this);
     this.ui = new UIModule(this);
     this.systemUI = new SystemUIModule(this);
+    this.input = new InputModule(this);
 
     // Register modules with the engine lifecycle
     this.modules = [
@@ -30,7 +32,8 @@ export class Engine extends BaseEngine {
       this.sceneGraph,
       this.renderer,
       this.ui,
-      this.systemUI
+      this.systemUI,
+      this.input
     ];
 
     this.lifecycleModules = [
@@ -38,7 +41,8 @@ export class Engine extends BaseEngine {
       this.sceneGraph,
       this.renderer,
       this.ui,
-      this.systemUI
+      this.systemUI,
+      this.input
     ]
   }
 
@@ -48,3 +52,41 @@ export class Engine extends BaseEngine {
   }
  
 }
+
+
+// /engine/Engine.js (excerpt)
+
+// start() {
+//   if (this.running) return;
+//   this.running = true;
+
+//   let lastTime = performance.now();
+
+//   const loop = (time) => {
+//     const dt = time - lastTime;
+//     lastTime = time;
+
+//     // 1. Input pipeline tick (gestures, pointer state, etc.)
+//     if (this.input?.pipeline) {
+//       this.input.pipeline.tick(dt);
+//     }
+
+//     // 2. Render all layers
+//     if (this.renderer) {
+//       this.renderer.tickAll(dt);
+//     }
+
+//     // 3. System UI / Editor updates (optional)
+//     this.emit("engine:frame", { dt });
+
+//     if (this.running) {
+//       requestAnimationFrame(loop);
+//     }
+//   };
+
+//   requestAnimationFrame(loop);
+// }
+
+// stop() {
+//   this.running = false;
+// }

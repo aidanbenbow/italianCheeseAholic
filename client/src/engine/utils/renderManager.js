@@ -87,3 +87,90 @@ export class RenderManager {
     return this.canvasManager.getCanvasSize(layer);
   }
 }
+
+// /render/core/RenderManager.js
+
+// export class RenderManager {
+//   constructor(canvasManager) {
+//     this.canvasManager = canvasManager;
+//   }
+
+//   // -------------------------------------------------------
+//   // Clear a specific rect on a given 2D context
+//   // -------------------------------------------------------
+//   clearRect(ctx, rect) {
+//     if (!ctx || !rect) return;
+//     ctx.clearRect(rect.x, rect.y, rect.width, rect.height);
+//   }
+
+//   // -------------------------------------------------------
+//   // Clear the entire canvas
+//   // -------------------------------------------------------
+//   clearAll(ctx) {
+//     if (!ctx || !ctx.canvas) return;
+//     ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+//   }
+
+//   // -------------------------------------------------------
+//   // Render clipped to a rect
+//   // -------------------------------------------------------
+//   renderClipped(ctx, rect, renderFn) {
+//     if (!ctx || !rect || typeof renderFn !== "function") return;
+
+//     ctx.save();
+//     ctx.beginPath();
+//     ctx.rect(rect.x, rect.y, rect.width, rect.height);
+//     ctx.clip();
+
+//     renderFn();
+
+//     ctx.restore();
+//   }
+
+//   // -------------------------------------------------------
+//   // Draw a node subtree (optional convenience)
+//   // -------------------------------------------------------
+//   renderNodeTree(node, ctx) {
+//     if (!node) return;
+//     node.render?.(ctx);
+
+//     if (Array.isArray(node.children)) {
+//       for (const child of node.children) {
+//         this.renderNodeTree(child, ctx);
+//       }
+//     }
+//   }
+
+//   // -------------------------------------------------------
+//   // Hit‑layer rendering (optional)
+//   // -------------------------------------------------------
+//   renderHitNode(node, hitCtx) {
+//     if (!node || !hitCtx) return;
+//     node.renderHit?.(hitCtx);
+//   }
+
+//   renderHitTree(node, hitCtx) {
+//     if (!node) return;
+//     this.renderHitNode(node, hitCtx);
+
+//     if (Array.isArray(node.children)) {
+//       for (const child of node.children) {
+//         this.renderHitTree(child, hitCtx);
+//       }
+//     }
+//   }
+
+//   // -------------------------------------------------------
+//   // Utility: get canvas size for a layer
+//   // -------------------------------------------------------
+//   getCanvasSize(layerName) {
+//     return this.canvasManager.getCanvasSize(layerName);
+//   }
+
+//   // -------------------------------------------------------
+//   // Utility: convert canvas coords → scene coords
+//   // -------------------------------------------------------
+//   toSceneCoords(layerName, x, y) {
+//     return this.canvasManager.toSceneCoords(layerName, x, y);
+//   }
+// }
