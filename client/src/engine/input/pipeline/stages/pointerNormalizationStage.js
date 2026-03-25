@@ -117,21 +117,13 @@ export class PointerNormalizationStage extends InputPipelineStage {
       return { x: 0, y: 0 };
     }
 
-    const scaleX = this.canvas.width / rect.width;
-    const scaleY = this.canvas.height / rect.height;
-
     return {
-      x: (clientX - rect.left) * scaleX,
-      y: (clientY - rect.top) * scaleY
+      x: clientX - rect.left,
+      y: clientY - rect.top
     };
   }
 
   _toSceneCoords(canvasX, canvasY) {
-    const canvasManager = this.scenePipeline?.renderManager?.canvasManager;
-    if (canvasManager?.toSceneCoords) {
-      return canvasManager.toSceneCoords("main", canvasX, canvasY);
-    }
-
     return { x: canvasX, y: canvasY };
   }
 

@@ -22,7 +22,7 @@ export class AppLoaderModule extends BaseModule {
 
       // Dynamically import the app
       const appModule = await import(`/src/apps/${appName}/main.js`);
-console.log(`App "${appName}" loaded:`, appModule);
+
       // Mount the new app
       if (typeof appModule.mount === "function") {
         appModule.mount(this.engine);

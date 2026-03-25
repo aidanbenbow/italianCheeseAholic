@@ -6,7 +6,15 @@ export class InputPipeline {
   }
 
   setStages(stages) {
-    this.stages = Array.isArray(stages) ? stages : [];
+    const nextStages = Array.isArray(stages) ? stages : [];
+
+    for (const stage of this.stages) {
+      if (!stage || nextStages.includes(stage)) continue;
+      stage.detach?.();
+      stage.destroy?.();
+    }
+
+    this.stages = nextStages;
 
     for (const stage of this.stages) {
       if (!stage) continue;

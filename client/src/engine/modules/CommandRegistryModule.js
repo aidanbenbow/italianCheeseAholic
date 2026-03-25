@@ -29,7 +29,6 @@ export class CommandRegistryModule extends BaseModule {
     this.register("debug:inputPipeline", () => {
       const snapshot = this.engine.context.input?.pipeline?.debugSnapshot?.() ?? [];
       console.table(snapshot);
-      this.engine.emit("debug:inputPipeline", { snapshot });
       return snapshot;
     });
 
@@ -52,7 +51,10 @@ export class CommandRegistryModule extends BaseModule {
 
     try {
       handler(payload);
-      this.engine.emit("command:executed", { name, payload });
+      const eventPayload = (payload === undefined)
+        ? { name }
+        : { name, payload };
+      this.engine.emit("command:executed", eventPayload);
     } catch (err) {
       console.error(`Command failed: ${name}`, err);
       this.engine.emit("command:error", { name, error: err });

@@ -25,8 +25,6 @@ export class LauncherModule extends BaseModule {
       this.manifest = await res.json();
       this.engine.context.manifest = this.manifest;
 
-      console.log("LauncherModule: Loaded manifest:", this.manifest);
-
       this.engine.emit("launcher:manifestLoaded", this.manifest);
       return this.manifest;
     } catch (err) {
@@ -60,8 +58,6 @@ export class LauncherModule extends BaseModule {
     if (!this.manifest) {
       throw new Error("LauncherModule: No manifest loaded");
     }
-
-    console.log(`LauncherModule: Launching app "${appName}"`);
 
     await this.engine.appLoader.loadApp(appName);
 

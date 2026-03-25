@@ -1,4 +1,5 @@
 export function mount(engine) {
+  engine.context.debugFlags.logUiOnStart = true;
   const bannerText = engine.ui.signal("Blog booting...");
   const titleInput = engine.ui.signal("");
   let articles = [];
@@ -9,7 +10,7 @@ export function mount(engine) {
     style: {
       width: 420,
       height: 36,
-      background: "#0F172A",
+      background: "#767e91",
       color: "#b2abab",
       font: "14px sans-serif",
       paddingLeft: 16
@@ -22,7 +23,7 @@ export function mount(engine) {
     style: {
       width: 420,
       height: 40,
-      background: "#111827",
+      background: "#7989ad",
       borderColor: "#374151",
       color: "#E5E7EB",
       paddingLeft: 12
@@ -48,7 +49,7 @@ export function mount(engine) {
       minHeight: 36,
       paddingX: 16
     },
-    onPress: () => saveArticle()
+    onPress: () => {console.log("Save button pressed"); }
   });
 
   engine.ui.mountNode(bannerNode);

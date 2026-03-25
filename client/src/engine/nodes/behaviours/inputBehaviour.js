@@ -75,6 +75,18 @@ export class InputBehavior extends Behavior {
 
     ctx.fillText(text, x + paddingX, contentY);
   }
+
+  onEvent(node, event) {
+    if (!event) return false;
+
+    if (event.type === "pointerdown" || event.type === "mousedown") {
+      node.requestFocus?.();
+      node.requestEdit?.();
+      return false;
+    }
+
+    return false;
+  }
 }
 
 // -------------------------------------------------------

@@ -94,7 +94,6 @@ export class RendererModule extends BaseModule {
     const systemSize = this.canvasManager.getCanvasSize("system");
     this.pipelines.system.start(systemSize);
 
-    console.log("RendererModule attached with multi-layer canvas");
   }
 
   detach() {

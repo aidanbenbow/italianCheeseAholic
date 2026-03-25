@@ -15,8 +15,8 @@ export class PointerStateStage extends InputPipelineStage {
     this.pointerState.update(event);
 
     return {
-      stage: "pointer-state",
-      ...event
+      ...event,
+      stage: "pointer-state"
     };
   }
 }

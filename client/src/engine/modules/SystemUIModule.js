@@ -69,7 +69,7 @@ export class SystemUIModule extends BaseModule {
     const systemPipeline = this.engine.renderer?.getPipeline("system");
     if (systemPipeline) {
       systemPipeline.setRoot(this.root);
-      console.log("SystemUIModule: System UI root attached to system pipeline");
+   
 
       // Add layers AFTER setRoot so pipeline listeners are active when scheduleLayout fires
       // Order = bottom-to-top: dropdown < keyboard < popup < toast

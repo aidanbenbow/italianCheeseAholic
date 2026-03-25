@@ -55,18 +55,28 @@ export class InputNode extends SceneNode {
 
   requestFocus() {
     const ctx = this.context;
+    if (ctx?.focusManager?.setFocus) {
+      ctx.focusManager.setFocus(this, { source: "InputNode.requestFocus" });
+      return;
+    }
 
     if (ctx.focus && ctx.focus !== this) {
       ctx.focus.focused = false;
       ctx.focus.requestRender?.();
     }
 
+    ctx.selection = this;
     ctx.focus = this;
     this.focused = true;
     this.requestRender();
   }
 
   blur() {
+    const focusManager = this.context?.focusManager;
+    if (focusManager?.setFocus && this.context?.focus === this) {
+      focusManager.setFocus(null, { source: "InputNode.blur" });
+    }
+
     this.focused = false;
 
     const editor = this.context.textEditor;

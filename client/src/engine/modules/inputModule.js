@@ -69,7 +69,22 @@ export class InputModule extends BaseModule {
     const synth = new SceneEventSynthesisStage();
 
     const dispatch = new SceneEventDispatchStage({
-      dispatcher: this.dispatcher
+      dispatcher: this.dispatcher,
+      onDispatch: sceneEvent => {
+        const shouldTraceMove = this.engine.context.debugFlags?.traceInputMoves === true;
+        const isMove = sceneEvent?.type === "pointermove";
+        if (isMove && !shouldTraceMove) return;
+
+        this.engine.emit("input:scene-event", {
+          type: sceneEvent?.type,
+          phase: sceneEvent?.phase,
+          x: sceneEvent?.x,
+          y: sceneEvent?.y,
+          targetId: sceneEvent?.target?.id ?? null,
+          currentTargetId: sceneEvent?.currentTarget?.id ?? null,
+          propagationStopped: Boolean(sceneEvent?.propagationStopped)
+        });
+      }
     });
 
     this.pipeline.setStages([

@@ -82,3 +82,66 @@ export class InputModule extends BaseModule {
   }
 }
 ```
+
+At the core is a TextEditingSystem module that orchestrates:
+- Model: TextModel (pure text buffer)
+- State controllers: CaretController, SelectionController
+- Input controllers: KeyboardInputController, PointerSelectionController, ClipboardController
+- UI helpers: OverlayRenderer, SelectionMenu, PastePrompt
+- Layout helpers: TextLayoutUtils, CaretHitTestUtils
+- Scene integration: InputNode + InputBehavior + TextComponent
+Everything else plugs into this.
+High‑level flow
+Start editing
+- User clicks/taps an InputNode.
+- InputNode.onPointerDown:
+- requestFocus()
+- requestEdit()
+- TextEditingSystem.startEditing(node):
+- activeNode = node
+- model.setText(node.getValue())
+- caret.moveToEnd()
+- selection.clear()
+- keyboard.enable()
+- invalidate()
+Typing
+- KeyboardInputController receives input / keydown.
+- For characters:
+- system.insertText(text):
+- uses TextModel to compute new text + caret
+- applyTextChange(newText):
+- activeNode.setValue(newText)
+- activeNode.requestLayout()
+- invalidate()
+- For backspace/delete:
+- system.backspace() / deleteForward():
+- uses TextModel + selection
+- updates caret + selection
+Pointer selection
+- PointerSelectionController receives pointer events.
+- On down:
+- hit‑test → caret index
+- caret.setIndex(index)
+- selection.begin(index)
+- On move:
+- hit‑test → new index
+- selection.extendTo(index)
+- caret.setIndex(index)
+- On up:
+- if selection.hasRange() → SelectionMenu.showForSelection()
+Clipboard
+- SelectionMenu or keyboard shortcuts call:
+- clipboard.copy()
+- clipboard.cut()
+- clipboard.paste()
+- ClipboardController uses SelectionController + TextModel + PastePrompt.
+Rendering
+- RenderPipeline calls:
+- InputBehavior.render() for the node
+- OverlayRenderer.render() as overlay:
+- drawSelection()
+- drawCaret()
+
+
+
+
