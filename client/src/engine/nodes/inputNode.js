@@ -14,7 +14,9 @@ export class InputNode extends SceneNode {
     value = "",
     placeholder = "",
     focusable = true,
-    editable = true
+    editable = true,
+    promptLabel,
+    onRequestInput
   } = {}) {
     super({
       id,
@@ -29,6 +31,8 @@ export class InputNode extends SceneNode {
     this.focusable = focusable;
     this.editable = editable;
     this.focused = false;
+    this.promptLabel = promptLabel ?? placeholder ?? "Enter text";
+    this.onRequestInput = onRequestInput ?? null;
 
     // Pure text component
     this.text = new TextComponent(this, {
@@ -84,7 +88,15 @@ export class InputNode extends SceneNode {
   requestEdit() {
     if (!this.editable) return;
     const editor = this.context.textEditor;
-    editor?.startEditing(this);
+    if (editor) {
+      editor.startEditing(this);
+    } else if (typeof this.onRequestInput === "function") {
+      this.onRequestInput({
+        currentValue: this.getValue(),
+        promptLabel: this.promptLabel,
+        node: this
+      });
+    }
   }
 
   // -------------------------------------------------------
