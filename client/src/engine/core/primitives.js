@@ -82,31 +82,41 @@ export function createButtonNode(options = {}) {
     disabled: Boolean(options.disabled)
   };
 
-  node.onPointerEnter = () => {
-    node.state.hovered = true;
-    node.requestRender();
-  };
+  node.onEvent = (event) => {
+    if (!event) return false;
 
-  node.onPointerLeave = () => {
-    node.state.hovered = false;
-    node.state.pressed = false;
-    node.requestRender();
-  };
-
-  node.onPointerDown = () => {
-    if (node.state.disabled) return;
-    node.state.pressed = true;
-    node.requestRender();
-  };
-
-  node.onPointerUp = () => {
-    if (node.state.disabled) return;
-    const shouldTrigger = node.state.pressed;
-    node.state.pressed = false;
-    node.requestRender();
-    if (shouldTrigger && typeof options.onPress === "function") {
-      options.onPress(node);
+    if (event.type === "pointerenter") {
+      node.state.hovered = true;
+      node.requestRender();
+      return false;
     }
+
+    if (event.type === "pointerleave") {
+      node.state.hovered = false;
+      node.state.pressed = false;
+      node.requestRender();
+      return false;
+    }
+
+    if (event.type === "pointerdown") {
+      if (node.state.disabled) return false;
+      node.state.pressed = true;
+      node.requestRender();
+      return false;
+    }
+
+    if (event.type === "pointerup") {
+      if (node.state.disabled) return false;
+      const shouldTrigger = node.state.pressed;
+      node.state.pressed = false;
+      node.requestRender();
+      if (shouldTrigger && typeof options.onPress === "function") {
+        options.onPress(node);
+      }
+      return false;
+    }
+
+    return false;
   };
 
   return node;

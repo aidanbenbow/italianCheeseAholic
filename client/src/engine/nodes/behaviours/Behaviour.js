@@ -28,15 +28,16 @@ export class Behavior {
     return node.containsLocal(point.x, point.y) ? node : null;
   }
 
-  // --- Optional pointer events ---
-  onPointerEnter(node) {}
-  onPointerLeave(node) {}
-  onPointerDown(node, x, y) {}
-  onPointerUp(node, x, y) {}
-  onPointerDoubleClick(node, x, y) {}
-
   // --- Optional event propagation ---
   onEvent(node, event) {
+    return false;
+  }
+
+  onEventCapture(node, event) {
+    return false;
+  }
+
+  onEventBubble(node, event) {
     return false;
   }
 }

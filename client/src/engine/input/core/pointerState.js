@@ -64,8 +64,32 @@ export class PointerState {
     const oldTarget = this.lastHoverTarget;
 
     if (newTarget !== oldTarget) {
-      oldTarget?.onPointerLeave?.();
-      newTarget?.onPointerEnter?.();
+      oldTarget?.onEvent?.({
+        type: "pointerleave",
+        target: oldTarget,
+        currentTarget: oldTarget,
+        phase: "target",
+        propagationStopped: false,
+        x: event.x,
+        y: event.y,
+        pointerId: event.pointerId,
+        pointerType: event.pointerType,
+        originalEvent: event.originalEvent
+      });
+
+      newTarget?.onEvent?.({
+        type: "pointerenter",
+        target: newTarget,
+        currentTarget: newTarget,
+        phase: "target",
+        propagationStopped: false,
+        x: event.x,
+        y: event.y,
+        pointerId: event.pointerId,
+        pointerType: event.pointerType,
+        originalEvent: event.originalEvent
+      });
+
       this.lastHoverTarget = newTarget;
     }
   }

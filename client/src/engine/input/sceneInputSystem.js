@@ -243,15 +243,29 @@ export class SceneInputSystem {
 
     // Hover transitions
     if (target !== this.lastPointerTarget) {
-      this.lastPointerTarget?.onPointerLeave?.();
-      target?.onPointerEnter?.();
-      this.lastPointerTarget = target;
-    }
+      this.lastPointerTarget?.onEvent?.({
+        type: "pointerleave",
+        target: this.lastPointerTarget,
+        currentTarget: this.lastPointerTarget,
+        phase: "target",
+        propagationStopped: false,
+        x,
+        y,
+        originalEvent
+      });
 
-    if (target) {
-      if (type === "mousedown") target.onPointerDown?.(x, y);
-      if (type === "mouseup")   target.onPointerUp?.(x, y);
-      if (type === "dblclick")  target.onPointerDoubleClick?.(x, y);
+      target?.onEvent?.({
+        type: "pointerenter",
+        target,
+        currentTarget: target,
+        phase: "target",
+        propagationStopped: false,
+        x,
+        y,
+        originalEvent
+      });
+
+      this.lastPointerTarget = target;
     }
 
     // SceneEvent dispatch

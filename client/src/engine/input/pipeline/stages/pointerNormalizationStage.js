@@ -27,7 +27,7 @@ export class PointerNormalizationStage extends InputPipelineStage {
     const sample = this._extractPointerSample(domEvent, rawType);
     if (!sample) return null;
 
-    const canvasPoint = this._toCanvasCoords(sample.clientX, sample.clientY);
+    const canvasPoint = this._toCanvasCoords(sample);
     const scenePoint = this._toSceneCoords(canvasPoint.x, canvasPoint.y);
     const delta = this._computeDelta(sample.pointerId, scenePoint.x, scenePoint.y, sample.deltaX, sample.deltaY);
     const target = this._resolveTarget(scenePoint.x, scenePoint.y);
@@ -111,15 +111,15 @@ export class PointerNormalizationStage extends InputPipelineStage {
     }
   }
 
-  _toCanvasCoords(clientX, clientY) {
+  _toCanvasCoords(sample) {
     const rect = this.canvas?.getBoundingClientRect?.();
     if (!rect || rect.width === 0 || rect.height === 0) {
       return { x: 0, y: 0 };
     }
 
     return {
-      x: clientX - rect.left,
-      y: clientY - rect.top
+      x: (sample?.clientX ?? 0) - rect.left,
+      y: (sample?.clientY ?? 0) - rect.top
     };
   }
 

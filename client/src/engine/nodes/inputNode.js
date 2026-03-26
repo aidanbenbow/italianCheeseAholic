@@ -65,7 +65,6 @@ export class InputNode extends SceneNode {
       ctx.focus.requestRender?.();
     }
 
-    ctx.selection = this;
     ctx.focus = this;
     this.focused = true;
     this.requestRender();
@@ -114,12 +113,4 @@ export class InputNode extends SceneNode {
     return this.text.getDisplayValue();
   }
 
-  // -------------------------------------------------------
-  // Pointer → editing
-  // -------------------------------------------------------
-
-  onPointerDown(evt) {
-    this.requestFocus();
-    this.requestEdit();
-  }
 }

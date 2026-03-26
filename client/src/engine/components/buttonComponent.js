@@ -7,7 +7,9 @@ export class ButtonComponent extends Component {
     this.args = args;
   }
 
-  onPointerUp(node) {
+  onEvent(node, event) {
+    if (event?.type !== "pointerup") return false;
     node.context.engine.commands.execute(this.command, this.args);
+    return false;
   }
 }

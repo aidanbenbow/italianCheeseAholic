@@ -24,13 +24,10 @@ export class Component {
   update(node, dt, ctx) {}
   render(node, ctx) {}
 
-  // Pointer events
-  onPointerEnter(node) {}
-  onPointerLeave(node) {}
-  onPointerDown(node, x, y) {}
-  onPointerUp(node, x, y) {}
-  onPointerDoubleClick(node, x, y) {}
-
   // Generic event hook
   onEvent(node, event) {}
+
+  onEventCapture(node, event) {}
+
+  onEventBubble(node, event) {}
 }

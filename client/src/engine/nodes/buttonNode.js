@@ -32,14 +32,41 @@ export class ButtonNode extends SceneNode {
     this.behavior = new ButtonBehavior(this);
   }
 
-  onPointerUp() {
-    if (this.state.disabled) return;
+  onEvent(event) {
+    if (!event) return false;
 
-    if (this.state.pressed && this.command) {
-      this.context.engine.commands.execute(this.command, this.commandArgs);
+    if (event.type === "pointerenter") {
+      this.state.hovered = true;
+      this.requestRender();
+      return false;
     }
 
-    this.state.pressed = false;
-    this.requestRender();
+    if (event.type === "pointerleave") {
+      this.state.hovered = false;
+      this.state.pressed = false;
+      this.requestRender();
+      return false;
+    }
+
+    if (event.type === "pointerdown") {
+      if (this.state.disabled) return false;
+      this.state.pressed = true;
+      this.requestRender();
+      return false;
+    }
+
+    if (event.type === "pointerup") {
+      if (this.state.disabled) return false;
+
+      if (this.state.pressed && this.command) {
+        this.context.engine.commands.execute(this.command, this.commandArgs);
+      }
+
+      this.state.pressed = false;
+      this.requestRender();
+      return false;
+    }
+
+    return false;
   }
 }
