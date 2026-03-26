@@ -16,6 +16,8 @@ export class KeyboardModule {
 
   constructor(engine) {
     this.engine = engine;
+    this._keydownHandler = null;
+    this._keyupHandler = null;
     this.root = new SceneNode({
       id: "keyboard-layer",
       context: engine.context,
@@ -31,13 +33,16 @@ export class KeyboardModule {
   }
 
   _bindKeyboardEvents() {
-    window.addEventListener("keydown", (e) => {
+    this._keydownHandler = (e) => {
       this.engine.emit("keyboard:keydown", { key: e.key, code: e.code, event: e });
-    });
+    };
 
-    window.addEventListener("keyup", (e) => {
+    this._keyupHandler = (e) => {
       this.engine.emit("keyboard:keyup", { key: e.key, code: e.code, event: e });
-    });
+    };
+
+    window.addEventListener("keydown", this._keydownHandler);
+    window.addEventListener("keyup", this._keyupHandler);
   }
 
   show() {
@@ -53,6 +58,14 @@ export class KeyboardModule {
   }
 
   destroy() {
-    // Cleanup keyboard listeners if needed
+    if (this._keydownHandler) {
+      window.removeEventListener("keydown", this._keydownHandler);
+      this._keydownHandler = null;
+    }
+
+    if (this._keyupHandler) {
+      window.removeEventListener("keyup", this._keyupHandler);
+      this._keyupHandler = null;
+    }
   }
 }

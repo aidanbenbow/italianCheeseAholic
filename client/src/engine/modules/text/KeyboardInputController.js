@@ -13,6 +13,9 @@ export class KeyboardInputController {
     // IME composition buffer
     this.composing = false;
     this.compositionText = "";
+
+    this._engineKeydownOff = null;
+    this._engineKeyupOff = null;
   }
 
   // -------------------------------------------------------
@@ -20,13 +23,19 @@ export class KeyboardInputController {
   // -------------------------------------------------------
 
   mount() {
-    this._keydown = (e) => this.onKeyDown(e);
     this._input = (e) => this.onInput(e);
     this._compositionStart = () => this.onCompositionStart();
     this._compositionUpdate = (e) => this.onCompositionUpdate(e);
     this._compositionEnd = (e) => this.onCompositionEnd(e);
 
-    window.addEventListener("keydown", this._keydown);
+    this._engineKeydownOff = this.system.engine.on("keyboard:keydown", ({ event }) => {
+      this.onKeyDown(event);
+    });
+
+    this._engineKeyupOff = this.system.engine.on("keyboard:keyup", ({ event }) => {
+      this.onKeyUp(event);
+    });
+
     window.addEventListener("input", this._input);
     window.addEventListener("compositionstart", this._compositionStart);
     window.addEventListener("compositionupdate", this._compositionUpdate);
@@ -36,11 +45,16 @@ export class KeyboardInputController {
   }
 
   destroy() {
-    window.removeEventListener("keydown", this._keydown);
     window.removeEventListener("input", this._input);
     window.removeEventListener("compositionstart", this._compositionStart);
     window.removeEventListener("compositionupdate", this._compositionUpdate);
     window.removeEventListener("compositionend", this._compositionEnd);
+
+    this._engineKeydownOff?.();
+    this._engineKeydownOff = null;
+
+    this._engineKeyupOff?.();
+    this._engineKeyupOff = null;
 
     this.stopBlink();
   }
@@ -77,10 +91,7 @@ export class KeyboardInputController {
   // -------------------------------------------------------
 
   onKeyDown(e) {
-    if (!this.enabled || !this.system.activeNode) return;
-
-    const caret = this.system.caret;
-    const selection = this.system.selection;
+    if (!this.enabled || !this.system.activeNode || !e) return;
 
     // Prevent browser scrolling
     if (["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(e.key)) {
@@ -149,6 +160,15 @@ export class KeyboardInputController {
         }
         break;
     }
+
+    if (this.shouldInsertFromKeyDown(e)) {
+      e.preventDefault();
+      this.system.insertText(e.key);
+    }
+  }
+
+  onKeyUp(e) {
+    if (!this.enabled || !this.system.activeNode || !e) return;
   }
 
   // -------------------------------------------------------
@@ -163,6 +183,13 @@ export class KeyboardInputController {
     if (text) {
       this.system.insertText(text);
     }
+  }
+
+  shouldInsertFromKeyDown(e) {
+    if (!e || this.composing || e.isComposing) return false;
+    if (e.ctrlKey || e.metaKey || e.altKey) return false;
+    if (e.key === "Dead") return false;
+    return typeof e.key === "string" && e.key.length === 1;
   }
 
   // -------------------------------------------------------

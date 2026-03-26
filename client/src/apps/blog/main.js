@@ -24,7 +24,7 @@ export function mount(engine) {
       height: 40,
       background: "#7989ad",
       borderColor: "#374151",
-      color: "#E5E7EB",
+      color: "#e37725",
       paddingLeft: 12
     }
   });

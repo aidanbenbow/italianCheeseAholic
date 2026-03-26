@@ -93,9 +93,7 @@ export class InputBehavior extends Behavior {
     if (!event) return false;
 
     if (event.type === "pointerdown" || event.type === "mousedown") {
-     
       node.requestFocus?.();
-      node.requestEdit?.();
       return false;
     }
 

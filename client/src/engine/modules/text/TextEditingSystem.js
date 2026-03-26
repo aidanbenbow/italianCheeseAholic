@@ -13,6 +13,7 @@ import { PastePrompt } from "./PastePrompt.js";
 export class TextEditingSystem {
   constructor(engine) {
     this.engine = engine;
+    this._offFocusChanged = null;
 
     // Active editing state
     this.activeNode = null;
@@ -44,9 +45,18 @@ export class TextEditingSystem {
     this.clipboard.mount();
     this.menu.mount();
     this.pastePrompt.mount();
+
+    this._offFocusChanged = this.engine.on("focus:changed", () => {
+      this.syncWithFocus();
+    });
+
+    this.syncWithFocus();
   }
 
   destroy() {
+    this._offFocusChanged?.();
+    this._offFocusChanged = null;
+
     this.keyboard.destroy();
     this.pointer.destroy();
     this.clipboard.destroy();
@@ -58,8 +68,30 @@ export class TextEditingSystem {
   // Editing lifecycle
   // -------------------------------------------------------
 
+  syncWithFocus() {
+    const focusedNode = this.engine.context.focus ?? null;
+    const shouldEdit = Boolean(
+      focusedNode &&
+      focusedNode.type === "input" &&
+      focusedNode.editable !== false
+    );
+
+    if (shouldEdit) {
+      this.startEditing(focusedNode);
+      return;
+    }
+
+    if (this.activeNode) {
+      this.stopEditing();
+    }
+  }
+
   startEditing(node) {
     if (!node) return;
+    if (this.activeNode === node) {
+      this.keyboard.enable();
+      return;
+    }
 
     this.activeNode = node;
 
