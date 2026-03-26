@@ -7,6 +7,8 @@ import { RendererModule } from "../modules/RendererModule.js";
 import { SystemUIModule } from "../modules/SystemUIModule.js";
 import { behaviorRegistry, registerCoreBehaviours } from "../registries/behaviourReg.js";
 import { InputModule } from "../modules/inputModule.js";
+import { InteractionModule } from "../modules/InteractionModule.js";
+import { TextEditingModule } from "../modules/TextEditingModule.js";
 import { LauncherModule } from "../modules/LauncherModule.js";
 import { LoggerModule } from "../modules/LoggerModule.js";
 import { FocusModule } from "../modules/FocusModule.js";
@@ -31,6 +33,8 @@ export class Engine extends BaseEngine {
     this.systemUI = new SystemUIModule(this);
     this.focusManager = new FocusModule(this);
     this.input = new InputModule(this);
+    this.interaction = new InteractionModule(this);
+    this.textEditing = new TextEditingModule(this);
     this.logger = new LoggerModule(this);
 
     // Register modules with the engine lifecycle
@@ -44,6 +48,8 @@ export class Engine extends BaseEngine {
       this.systemUI,
       this.focusManager,
       this.input,
+      this.interaction,
+      this.textEditing,
       this.logger
     ];
     this.registerModules(this.modules);
@@ -56,6 +62,8 @@ export class Engine extends BaseEngine {
       this.systemUI,
       this.focusManager,
       this.input,
+      this.interaction,
+      this.textEditing,
       this.logger
     ];
   }

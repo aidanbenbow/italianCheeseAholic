@@ -1,29 +1,23 @@
 // /engine/modules/text/layout/CaretHitTestUtils.js
 
-import {
-  getTextAreaTop,
-  getLineStartX
-} from "./TextLayoutUtils.js";
-
 /**
  * Convert a scene-space (x, y) pointer position into a caret index.
  * Pure function: no system, no pipeline, no DOM.
  */
 export function getCaretIndexFromMousePosition(node, sceneX, sceneY, ctx) {
-  if (!node || !node._layout) return 0;
+  const nodeLayout = node?.layout;
+  const textLayout = node?.text?.getLayout?.();
+  if (!node || !nodeLayout || !textLayout) return 0;
 
-  const { lines, lineHeight } = node._layout;
+  const { lines, lineHeight, font } = textLayout;
   if (!lines || lines.length === 0) return 0;
 
-  ctx.font = node.style.font;
+  ctx.font = font;
 
   // -------------------------------------------------------
   // 1. Determine which line was clicked
   // -------------------------------------------------------
-  const textTop = getTextAreaTop(node);
-  const paddingY = node.style.paddingY || 0;
-
-  const relativeY = sceneY - textTop - paddingY;
+  const relativeY = sceneY - nodeLayout.contentY;
   const rawLineIndex = Math.floor(relativeY / lineHeight);
 
   const lineIndex = Math.max(0, Math.min(rawLineIndex, lines.length - 1));
@@ -34,7 +28,7 @@ export function getCaretIndexFromMousePosition(node, sceneX, sceneY, ctx) {
   // -------------------------------------------------------
   // 2. Determine X offset within the line
   // -------------------------------------------------------
-  const lineStartX = getLineStartX(node, line, ctx);
+  const lineStartX = nodeLayout.contentX;
   const clickX = sceneX - lineStartX;
 
   // -------------------------------------------------------

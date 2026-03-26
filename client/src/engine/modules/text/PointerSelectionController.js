@@ -2,7 +2,7 @@
 
 import {
   getCaretIndexFromMousePosition
-} from "./layout/CaretHitTestUtils.js";
+} from "./layout/CaretHitTestUtil.js";
 
 export class PointerSelectionController {
   constructor(system) {

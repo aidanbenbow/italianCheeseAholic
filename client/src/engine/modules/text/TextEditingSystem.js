@@ -6,7 +6,7 @@ import { SelectionController } from "./SelectionController.js";
 import { KeyboardInputController } from "./KeyboardInputController.js";
 import { PointerSelectionController } from "./PointerSelectionController.js";
 import { ClipboardController } from "./ClipboardController.js";
-import { OverlayRenderer } from "./OverlayRenderer.js";
+import { OverlayRenderer } from "./OverlayRender.js";
 import { SelectionMenu } from "./SelectionMenu.js";
 import { PastePrompt } from "./PastePrompt.js";
 
@@ -27,17 +27,13 @@ export class TextEditingSystem {
     this.overlay = new OverlayRenderer(this);
     this.menu = new SelectionMenu(this);
     this.pastePrompt = new PastePrompt(this);
-
-    // Pipeline reference (set during mount)
-    this.renderPipeline = null;
   }
 
   mount() {
-    // Hook into render pipeline
-    this.renderPipeline = this.engine.renderer?.pipeline;
-
-    if (this.renderPipeline) {
-      this.renderPipeline.addOverlayRenderer((ctx) => {
+    // Register overlay renderer with interaction layer
+    const interactionModule = this.engine.context.interaction;
+    if (interactionModule) {
+      interactionModule.registerOverlayRenderer((ctx) => {
         this.overlay.render(ctx);
       });
     }
@@ -69,6 +65,7 @@ export class TextEditingSystem {
 
     // Load node text into model
     const initialText = node.text?.value ?? "";
+   
     this.model.setText(initialText);
 
     // Reset caret + selection
@@ -153,6 +150,6 @@ export class TextEditingSystem {
   // -------------------------------------------------------
 
   invalidate() {
-    this.renderPipeline?.invalidate();
+    // Overlay renders continuously on requestAnimationFrame, no need to invalidate
   }
 }

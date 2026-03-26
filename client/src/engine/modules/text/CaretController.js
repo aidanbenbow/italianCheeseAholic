@@ -10,6 +10,7 @@ export class CaretController {
   setIndex(pos) {
     const text = this.system.model.getText();
     this.index = Math.max(0, Math.min(pos, text.length));
+    
   }
 
   move(offset) {
@@ -31,12 +32,14 @@ export class CaretController {
 
   getScenePosition(ctx) {
     const node = this.system.activeNode;
-    if (!node || !node._layout) return { x: 0, y: 0 };
+    const nodeLayout = node?.layout;
+    const textLayout = node?.text?.getLayout?.();
+    if (!node || !nodeLayout || !textLayout) return { x: 0, y: 0 };
 
-    const { lines, lineHeight } = node._layout;
+    const { lines, lineHeight, font } = textLayout;
     const caretIndex = this.index;
 
-    ctx.font = node.style.font;
+    ctx.font = font;
 
     // Find line containing caret
     let lineIndex = 0;
@@ -54,8 +57,8 @@ export class CaretController {
     const line = lines[lineIndex];
     const beforeText = line.text.slice(0, offsetInLine);
 
-    const x = node._layout.getLineStartX(line, ctx) + ctx.measureText(beforeText).width;
-    const y = node._layout.getTextAreaTop() + lineIndex * lineHeight;
+    const x = nodeLayout.contentX + ctx.measureText(beforeText).width;
+    const y = nodeLayout.contentY + lineIndex * lineHeight;
 
     return { x, y };
   }

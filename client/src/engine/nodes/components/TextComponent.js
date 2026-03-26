@@ -7,6 +7,7 @@ export class TextComponent extends Component {
     this.value = String(value ?? "");
     this.placeholder = String(placeholder ?? "");
     this.font = String(font ?? "14px sans-serif");
+    this.layout = null;
 
     if (node) {
       this.attach(node);
@@ -55,5 +56,17 @@ export class TextComponent extends Component {
 
   getDisplayValue() {
     return this.value.length > 0 ? this.value : this.placeholder;
+  }
+
+  setLayout(layout) {
+    this.layout = layout ?? null;
+  }
+
+  getLayout() {
+    return this.layout;
+  }
+
+  clearLayout() {
+    this.layout = null;
   }
 }

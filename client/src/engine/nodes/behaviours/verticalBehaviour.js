@@ -34,7 +34,7 @@ export class VerticalBehavior extends Behavior {
             const childMeasure = child.measure({ maxWidth: containerWidth, maxHeight: Infinity }, ctx);
             const childX = bounds.x + (containerWidth - childMeasure.width) / 2;
 
-            child.layout(
+            child.applyLayout(
                 {
                     x: childX,
                     y: currentY,

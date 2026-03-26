@@ -1,7 +1,6 @@
 export function mount(engine) {
   engine.context.debugFlags.logUiOnStart = true;
   const bannerText = engine.ui.signal("Blog booting...");
-  const titleInput = engine.ui.signal("");
   let articles = [];
   let titleNodes = [];
 
@@ -27,14 +26,6 @@ export function mount(engine) {
       borderColor: "#374151",
       color: "#E5E7EB",
       paddingLeft: 12
-    },
-    onRequestInput: ({ currentValue, promptLabel, node }) => {
-      const nextValue = window.prompt(promptLabel, currentValue);
-      if (nextValue !== null) {
-        titleInput.value = nextValue;
-        node.value = nextValue;
-        node.requestLayout();
-      }
     }
   });
 
@@ -49,7 +40,7 @@ export function mount(engine) {
       minHeight: 36,
       paddingX: 16
     },
-    onPress: () => {console.log("Save button pressed"); }
+    onPress: () => { saveArticle(); }
   });
 
   engine.ui.mountNode(bannerNode);
@@ -57,10 +48,6 @@ export function mount(engine) {
   engine.ui.mountNode(saveButton);
 
   engine.ui.bindText(bannerNode, bannerText);
-  engine.ui.bind(inputNode, (node) => {
-    node.value = titleInput.value;
-    node.requestRender();
-  });
 
   engine.commands.execute('debug:inputPipeline');
 
@@ -68,7 +55,7 @@ export function mount(engine) {
   engine.systemUI.toastLayer.show("Welcome!");
 
   async function saveArticle() {
-    const title = titleInput.value.trim();
+    const title = inputNode.value.trim();
     if (!title) {
       engine.systemUI.toastLayer.show("Enter a title first");
       return;
@@ -86,7 +73,7 @@ export function mount(engine) {
         throw new Error(payload?.error ?? "Failed to save article");
       }
 
-      titleInput.value = "";
+      inputNode.value = "";
       engine.systemUI.toastLayer.show("Article saved");
       await loadArticles();
     } catch (error) {

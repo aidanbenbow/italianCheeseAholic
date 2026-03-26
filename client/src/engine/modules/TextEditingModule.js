@@ -1,5 +1,5 @@
 // /engine/modules/TextEditingModule.js
-import { BaseModule } from "../core/BaseModule.js";
+import { BaseModule } from "./BaseModule.js";
 import { TextEditingSystem } from "./text/TextEditingSystem.js";
 
 export class TextEditingModule extends BaseModule {

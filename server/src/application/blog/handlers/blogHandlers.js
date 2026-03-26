@@ -49,7 +49,8 @@ export function registerBlogHttpRoutes(app, container) {
         createdAt: req.body?.createdAt || new Date().toISOString()
       };
 
-      const created = await blogService.create(article);
+     // const created = await blogService.create(article);
+     console.log("Received article creation request", article);
       res.status(201).json({ ok: true, data: created });
     } catch (error) {
       res.status(500).json({ ok: false, error: error?.message ?? "Failed to create article" });

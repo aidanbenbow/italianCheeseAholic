@@ -47,9 +47,7 @@ export function createInputNode(options = {}) {
     },
     behavior: options.behavior ?? createBehaviorFromRegistry("input"),
     value: options.value ?? "",
-    placeholder: options.placeholder ?? "Enter text",
-    promptLabel: options.promptLabel ?? options.placeholder ?? "Enter text",
-    onRequestInput: options.onRequestInput
+    placeholder: options.placeholder ?? "Enter text"
   });
 
   return node;

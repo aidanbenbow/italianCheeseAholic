@@ -212,9 +212,10 @@ export class KeyboardInputController {
   moveCaretVertical(direction, shiftKey) {
     // Vertical movement requires layout access
     const node = this.system.activeNode;
-    if (!node || !node._layout) return;
+    const textLayout = node?.text?.getLayout?.();
+    if (!node || !textLayout) return;
 
-    const { lines } = node._layout;
+    const { lines } = textLayout;
     const caretIndex = this.system.caret.index;
 
     // Find current line

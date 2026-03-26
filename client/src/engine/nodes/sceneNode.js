@@ -24,6 +24,17 @@ export class SceneNode {
 
     // Always initialized
     this.bounds = { x: 0, y: 0, width: 0, height: 0 };
+    this.layout = {
+      x: 0,
+      y: 0,
+      width: 0,
+      height: 0,
+      contentX: 0,
+      contentY: 0,
+      contentWidth: 0,
+      contentHeight: 0,
+      padding: { left: 0, right: 0, top: 0, bottom: 0 }
+    };
     this.measured = { width: 0, height: 0 };
 
     this.hitTestable = true;
@@ -140,9 +151,10 @@ export class SceneNode {
     return this.measured;
   }
 
-  layout(bounds, ctx) {
+  applyLayout(bounds, ctx) {
     this.lastLayoutBounds = bounds;
     this.bounds = bounds;
+    this.layout = buildNodeLayout(bounds, this.style);
     this.behavior?.layout?.(this, bounds, ctx);
     this.clearDirty(DIRTY_LAYOUT);
   }
@@ -319,4 +331,33 @@ function cloneBounds(bounds) {
     width: bounds.width ?? 0,
     height: bounds.height ?? 0
   };
+}
+
+function buildNodeLayout(bounds, style = {}) {
+  const left = toFinite(style.paddingLeft, 0) + toFinite(style.paddingX, 0);
+  const right = toFinite(style.paddingRight, 0) + toFinite(style.paddingX, 0);
+  const top = toFinite(style.paddingTop, 0) + toFinite(style.paddingY, 0);
+  const bottom = toFinite(style.paddingBottom, 0) + toFinite(style.paddingY, 0);
+
+  const width = bounds?.width ?? 0;
+  const height = bounds?.height ?? 0;
+  const x = bounds?.x ?? 0;
+  const y = bounds?.y ?? 0;
+
+  return {
+    x,
+    y,
+    width,
+    height,
+    contentX: x + left,
+    contentY: y + top,
+    contentWidth: Math.max(0, width - left - right),
+    contentHeight: Math.max(0, height - top - bottom),
+    padding: { left, right, top, bottom }
+  };
+}
+
+function toFinite(value, fallback) {
+  const num = Number(value);
+  return Number.isFinite(num) ? num : fallback;
 }

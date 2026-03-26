@@ -1,17 +1,17 @@
 // /scene/behaviours/InputBehavior.js
 
 import { Behavior } from "./Behaviour.js";
-
+import { TextLayoutCalculator } from "../../utils/textLayoutCalculator.js";
 export class InputBehavior extends Behavior {
   measure(node, constraints, ctx) {
     const style = node.style ?? {};
     const font = node.text?.font ?? style.font ?? "14px sans-serif";
-    const text = node.text?.getDisplayValue() ?? "";
+    const text = node.text?.value ?? "";
 
     const maxWidth = Number.isFinite(constraints?.maxWidth) ? constraints.maxWidth : Infinity;
     const maxHeight = Number.isFinite(constraints?.maxHeight) ? constraints.maxHeight : Infinity;
 
-    const intrinsic = measureText(text, font, ctx);
+    const intrinsicLayout = TextLayoutCalculator.calculateLayout(text, ctx, Infinity, font);
 
     const paddingX =
       toFinite(style.paddingLeft, 0) +
@@ -24,13 +24,13 @@ export class InputBehavior extends Behavior {
       toFinite(style.paddingY, 0) * 2;
 
     const width = clamp(
-      toFinite(style.width, intrinsic.width + paddingX),
+      toFinite(style.width, intrinsicLayout.maxLineWidth + paddingX),
       toFinite(style.minWidth, 120),
       maxWidth
     );
 
     const height = clamp(
-      toFinite(style.height, intrinsic.height + paddingY),
+      toFinite(style.height, intrinsicLayout.totalHeight + paddingY),
       toFinite(style.minHeight, 34),
       maxHeight
     );
@@ -39,7 +39,8 @@ export class InputBehavior extends Behavior {
   }
 
   render(node, ctx) {
-    const { x, y, width, height } = node.bounds;
+    const layout = node.layout ?? node.bounds;
+    const { x, y, width, height } = layout;
     const style = node.style ?? {};
     const focused = Boolean(node.focused);
 
@@ -65,21 +66,34 @@ export class InputBehavior extends Behavior {
       ? (style.placeholderColor ?? "#6B7280")
       : (style.color ?? "#F9FAFB");
 
-    const paddingX =
-      toFinite(style.paddingLeft, 10) + toFinite(style.paddingX, 0);
-
-    const paddingY =
-      toFinite(style.paddingTop, 0) + toFinite(style.paddingY, 0);
+    const paddingX = layout?.padding?.left ?? (toFinite(style.paddingLeft, 10) + toFinite(style.paddingX, 0));
+    const paddingY = layout?.padding?.top ?? (toFinite(style.paddingTop, 0) + toFinite(style.paddingY, 0));
 
     const contentY = y + paddingY + (height - paddingY * 2) / 2;
 
     ctx.fillText(text, x + paddingX, contentY);
+
+    // -------------------------------------------------------
+    // Calculate and store detailed text layout for overlay renderer
+    // -------------------------------------------------------
+    const font = node.text?.font ?? style.font ?? "14px sans-serif";
+    const contentWidth = Math.max(0, (layout?.contentWidth ?? (width - paddingX * 2)));
+
+    const textLayout = TextLayoutCalculator.calculateLayout(
+      node.text?.value ?? "",
+      ctx,
+      contentWidth,
+      font
+    );
+
+    node.text?.setLayout?.(textLayout);
   }
 
   onEvent(node, event) {
     if (!event) return false;
 
     if (event.type === "pointerdown" || event.type === "mousedown") {
+     
       node.requestFocus?.();
       node.requestEdit?.();
       return false;
@@ -92,30 +106,6 @@ export class InputBehavior extends Behavior {
 // -------------------------------------------------------
 // Utilities
 // -------------------------------------------------------
-
-function measureText(text, font, ctx) {
-  if (!ctx) {
-    const size = parseFontSize(font);
-    return { width: text.length * Math.max(6, size * 0.55), height: size * 1.2 };
-  }
-
-  ctx.save();
-  ctx.font = font;
-  const metrics = ctx.measureText(text);
-  ctx.restore();
-
-  const size = parseFontSize(font);
-  const height =
-    (metrics.actualBoundingBoxAscent ?? size * 0.8) +
-    (metrics.actualBoundingBoxDescent ?? size * 0.2);
-
-  return { width: metrics.width, height };
-}
-
-function parseFontSize(font) {
-  const match = String(font).match(/(\d+(?:\.\d+)?)px/);
-  return match ? Number(match[1]) : 14;
-}
 
 function toFinite(value, fallback) {
   const number = Number(value);

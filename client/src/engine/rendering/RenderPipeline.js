@@ -248,7 +248,7 @@ export class RenderPipeline {
           const layoutBounds = this.getLayoutBounds(node, measureConstraints);
 
           const layoutStart = now();
-          node.layout(layoutBounds, this.rendererContext);
+          node.applyLayout(layoutBounds, this.rendererContext);
           layoutDuration += now() - layoutStart;
           node.flags &= ~DIRTY_LAYOUT;
 
