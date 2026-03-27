@@ -3,7 +3,7 @@ import { AppLoaderModule } from "../modules/AppLoaderModule.js";
 import { CommandRegistryModule } from "../modules/CommandRegistryModule.js";
 import { UIModule } from "../modules/UIModule.js";
 import { SceneGraphModule } from "../modules/SceneGraphModule.js";
-import { RendererModule } from "../modules/RendererModule.js";
+import { RenderPipelineModule } from "../modules/RenderPipelineModule.js";
 import { SystemUIModule } from "../modules/SystemUIModule.js";
 import { behaviorRegistry, registerCoreBehaviours } from "../registries/behaviourReg.js";
 import { InputModule } from "../modules/inputModule.js";
@@ -28,7 +28,7 @@ export class Engine extends BaseEngine {
     this.appLoader = new AppLoaderModule(this);
     this.commands = new CommandRegistryModule(this);
     this.sceneGraph = new SceneGraphModule(this);
-    this.renderer = new RendererModule(this);
+    this.renderer = new RenderPipelineModule(this);
     this.ui = new UIModule(this);
     this.systemUI = new SystemUIModule(this);
     this.focusManager = new FocusModule(this);
