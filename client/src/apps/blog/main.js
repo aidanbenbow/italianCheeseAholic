@@ -1,6 +1,6 @@
 export function mount(engine) {
   engine.context.debugFlags.logUiOnStart = true;
-  const bannerText = engine.ui.signal("Blog booting...");
+  const bannerText = engine.ui.signal("New Article");
   let articles = [];
   let titleNodes = [];
 
@@ -19,6 +19,59 @@ export function mount(engine) {
   const inputNode = engine.ui.createInputNode({
     id: "blog-title-input",
     placeholder: "Enter article title",
+    style: {
+      width: 420,
+      height: 40,
+      background: "#7989ad",
+      borderColor: "#374151",
+      color: "#ebe5e1",
+      paddingLeft: 12
+    }
+  });
+
+  const excerptInputNode = engine.ui.createInputNode({
+    id: "blog-excerpt-input",
+    placeholder: "Enter short excerpt",
+    style: {
+      width: 420,
+      height: 40,
+      background: "#7989ad",
+      borderColor: "#374151",
+      color: "#e37725",
+      paddingLeft: 12
+    }
+  });
+
+  const contentInputNode = engine.ui.createInputNode({
+    id: "blog-content-input",
+    placeholder: "Enter article content",
+    style: {
+      width: 420,
+      height: 40,
+      background: "#7989ad",
+      borderColor: "#374151",
+      color: "#e37725",
+      paddingLeft: 12
+    }
+  });
+
+  const photoInputNode = engine.ui.createInputNode({
+    id: "blog-photo-input",
+    placeholder: "Enter photo URL (optional)",
+    style: {
+      width: 420,
+      height: 40,
+      background: "#7989ad",
+      borderColor: "#374151",
+      color: "#e37725",
+      paddingLeft: 12
+    }
+  });
+
+  const statusInputNode = engine.ui.createInputNode({
+    id: "blog-status-input",
+    placeholder: "Status: draft or published",
+    value: "draft",
     style: {
       width: 420,
       height: 40,
@@ -45,27 +98,60 @@ export function mount(engine) {
 
   engine.ui.mountNode(bannerNode);
   engine.ui.mountNode(inputNode);
+  engine.ui.mountNode(excerptInputNode);
+  engine.ui.mountNode(contentInputNode);
+  engine.ui.mountNode(photoInputNode);
+  engine.ui.mountNode(statusInputNode);
   engine.ui.mountNode(saveButton);
 
   engine.ui.bindText(bannerNode, bannerText);
 
   engine.commands.execute('debug:inputPipeline');
 
-  loadArticles();
+ // loadArticles();
   engine.systemUI.toastLayer.show("Welcome!");
 
   async function saveArticle() {
     const title = inputNode.value.trim();
+    const excerpt = excerptInputNode.value.trim();
+    const content = contentInputNode.value.trim();
+    const photo = photoInputNode.value.trim();
+    const requestedStatus = statusInputNode.value.trim().toLowerCase();
+
     if (!title) {
       engine.systemUI.toastLayer.show("Enter a title first");
       return;
     }
 
+    const status = requestedStatus === "published" ? "published" : "draft";
+
+    const now = Date.now();
+    const slug = title
+      .toLowerCase()
+      .replace(/[^a-z0-9\s-]/g, "")
+      .trim()
+      .replace(/\s+/g, "-");
+
+    const articlePayload = {
+      articleId: slug || `article-${now}`,
+      title,
+      content,
+      excerpt: excerpt || title,
+      photo,
+      slug: slug || `article-${now}`,
+      status,
+      createdAt: now,
+      publishedAt: status === "published" ? now : 0,
+      updatedAt: now,
+      createdBy: "admin",
+      updatedBy: "admin"
+    };
+
     try {
       const response = await fetch("/api/blog/articles", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title })
+        body: JSON.stringify(articlePayload)
       });
 
       const payload = await response.json();
@@ -74,8 +160,12 @@ export function mount(engine) {
       }
 
       inputNode.value = "";
+  excerptInputNode.value = "";
+  contentInputNode.value = "";
+  photoInputNode.value = "";
+  statusInputNode.value = "draft";
       engine.systemUI.toastLayer.show("Article saved");
-      await loadArticles();
+     // await loadArticles();
     } catch (error) {
       engine.systemUI.toastLayer.show("Save failed");
       console.error("Blog article save failed", error);

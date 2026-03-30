@@ -14,7 +14,9 @@ export class InputNode extends SceneNode {
     value = "",
     placeholder = "",
     focusable = true,
-    editable = true
+    editable = true,
+    multiline = true,
+    autoGrow = true
   } = {}) {
     super({
       id,
@@ -28,6 +30,8 @@ export class InputNode extends SceneNode {
     this.type = "input";
     this.focusable = focusable;
     this.editable = editable;
+    this.multiline = multiline !== false;
+    this.autoGrow = autoGrow !== false;
     this.focused = false;
 
     // Pure text component

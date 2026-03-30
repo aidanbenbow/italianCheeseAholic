@@ -128,7 +128,9 @@ export class KeyboardInputController {
 
       case "Enter":
         e.preventDefault();
-        this.system.insertText("\n");
+        if (this.system.activeNode?.multiline !== false) {
+          this.system.insertText("\n");
+        }
         return;
 
       case "a":

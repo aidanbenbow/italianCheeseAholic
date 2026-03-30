@@ -1,11 +1,17 @@
-import express from "express";
-import http from "http";
-import { Server } from "socket.io";
+import dotenv from "dotenv";
 import path from "path";
 import { fileURLToPath } from "url";
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+dotenv.config({ path: path.resolve(__dirname, ".env") });
+
+import express from "express";
+import http from "http";
+import { Server } from "socket.io";
+
 import { registerStatic } from "./src/http/static.js";
-import { buildContainer } from "./src/bootstrap/buildContainer.js";
 
 // Backend app modules
 import { registerBackend as registerAuth } from "../shared/auth/registerBackend.js";
@@ -13,8 +19,8 @@ import { registerBackend as registerFormBuilder } from "./src/application/formBu
 import { registerBackend as registerDorcas } from "./src/application/dorcasApp/registerBackend.js";
 import { registerBackend as registerBlog } from "./src/application/blog/registerBackend.js";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+// Dynamic import so buildContainer loads AFTER dotenv.config()
+const { buildContainer } = await import("./src/bootstrap/buildContainer.js");
 
 const app = express();
 const server = http.createServer(app);

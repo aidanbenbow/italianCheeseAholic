@@ -12,7 +12,7 @@ export class BlogRepository {
     this.tableName = process.env.BLOG_TABLE_NAME || "articles_table";
     this.memoryArticles = new Map();
     this.allowMemoryFallback = process.env.BLOG_ALLOW_MEMORY_FALLBACK
-      ? process.env.BLOG_ALLOW_MEMORY_FALLBACK === "true"
+      ? process.env.BLOG_ALLOW_MEMORY_FALLBACK === "false"
       : process.env.NODE_ENV !== "production";
   }
 

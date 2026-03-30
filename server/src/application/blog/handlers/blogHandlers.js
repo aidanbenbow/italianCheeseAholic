@@ -4,7 +4,31 @@ export function registerBlogHandlers(io, container) {
 
     socket.on("blog:create", async (data, callback) => {
       try {
-        const result = await blogService.create(data);
+        const blogService = container.resolve("blogService");
+        const title = typeof data?.title === "string" ? data.title.trim() : "";
+
+        if (!title) {
+          callback?.({ ok: false, error: "title is required" });
+          return;
+        }
+
+        const now = Date.now();
+        const article = {
+          articleId: data?.articleId || `article-${now}`,
+          title,
+          content: data?.content ?? "",
+          excerpt: data?.excerpt ?? "",
+          slug: data?.slug ?? title.toLowerCase().replace(/\s+/g, "-"),
+          status: data?.status ?? "draft",
+          createdAt: data?.createdAt ?? now,
+          updatedAt: now,
+          createdBy: data?.createdBy ?? "system",
+          updatedBy: "system",
+          publishedAt: data?.publishedAt ?? 0,
+          photo: data?.photo ?? ""
+        };
+
+        const result = await blogService.create(article);
         callback?.({ ok: true, data: result });
       } catch (error) {
         callback?.({ ok: false, error: error?.message ?? "Failed to create article" });
@@ -31,7 +55,7 @@ export function registerBlogHandlers(io, container) {
   });
 }
 
-export function registerBlogHttpRoutes(app, container) {
+export function registerBlogHttpRoutes(app, container, io) {
   app.post("/api/blog/articles", async (req, res) => {
     try {
       const blogService = container.resolve("blogService");
@@ -43,14 +67,24 @@ export function registerBlogHttpRoutes(app, container) {
         return;
       }
 
+      const now = Date.now();
       const article = {
-        articleId: req.body?.articleId || `article-${Date.now()}`,
+        articleId: req.body?.articleId || `article-${now}`,
         title,
-        createdAt: req.body?.createdAt || new Date().toISOString()
+        content: req.body?.content ?? "",
+        excerpt: req.body?.excerpt ?? "",
+        slug: req.body?.slug ?? title.toLowerCase().replace(/\s+/g, "-"),
+        status: req.body?.status ?? "draft",
+        createdAt: req.body?.createdAt ?? now,
+        updatedAt: now,
+        createdBy: req.body?.createdBy ?? "system",
+        updatedBy: "system",
+        publishedAt: req.body?.publishedAt ?? 0,
+        photo: req.body?.photo ?? ""
       };
 
-     // const created = await blogService.create(article);
-     console.log("Received article creation request", article);
+      const created = await blogService.create(article);
+      io?.emit?.("blog:created", created);
       res.status(201).json({ ok: true, data: created });
     } catch (error) {
       res.status(500).json({ ok: false, error: error?.message ?? "Failed to create article" });

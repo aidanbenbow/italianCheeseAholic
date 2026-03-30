@@ -14,6 +14,6 @@ export function registerBackend(container, io, app) {
 
   registerBlogHandlers(io, container);
   if (app) {
-    registerBlogHttpRoutes(app, container);
+    registerBlogHttpRoutes(app, container, io);
   }
 }
