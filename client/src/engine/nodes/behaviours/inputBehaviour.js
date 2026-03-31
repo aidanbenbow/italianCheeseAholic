@@ -2,31 +2,32 @@
 
 import { Behavior } from "./Behaviour.js";
 import { TextLayoutCalculator } from "../../utils/textLayoutCalculator.js";
+import { resolveContentRect, resolvePadding } from "./textBoxHelpers.js";
+import { renderBoxBackground, renderBoxBorder } from "./boxRenderHelpers.js";
 export class InputBehavior extends Behavior {
   measure(node, constraints, ctx) {
     const style = node.style ?? {};
     const font = node.text?.font ?? style.font ?? "14px sans-serif";
     const text = node.text?.value ?? "";
     const autoGrow = node.autoGrow !== false;
-    const lineGap = toFinite(style.lineGap, 2);
+    const lineGap = this.toFinite(style.lineGap, 2);
 
-    const maxWidth = Number.isFinite(constraints?.maxWidth) ? constraints.maxWidth : Infinity;
-    const maxHeight = Number.isFinite(constraints?.maxHeight) ? constraints.maxHeight : Infinity;
+    const { maxWidth, maxHeight } = this.normalizeConstraints(constraints);
 
     const paddingX =
-      toFinite(style.paddingLeft, 0) +
-      toFinite(style.paddingRight, 0) +
-      toFinite(style.paddingX, 0) * 2;
+      this.toFinite(style.paddingLeft, 0) +
+      this.toFinite(style.paddingRight, 0) +
+      this.toFinite(style.paddingX, 0) * 2;
 
     const paddingY =
-      toFinite(style.paddingTop, 0) +
-      toFinite(style.paddingBottom, 0) +
-      toFinite(style.paddingY, 0) * 2;
+      this.toFinite(style.paddingTop, 0) +
+      this.toFinite(style.paddingBottom, 0) +
+      this.toFinite(style.paddingY, 0) * 2;
 
-    const minWidth = toFinite(style.minWidth, 120);
-    const baseWidth = toFinite(style.width, minWidth);
+    const minWidth = this.toFinite(style.minWidth, 120);
+    const baseWidth = this.toFinite(style.width, minWidth);
 
-    const width = clamp(
+    const width = this.clamp(
       baseWidth,
       minWidth,
       maxWidth
@@ -36,12 +37,12 @@ export class InputBehavior extends Behavior {
     const intrinsicLayout = TextLayoutCalculator.calculateLayout(text, ctx, contentWidth, font);
     const totalTextHeight = calculateTotalTextHeight(intrinsicLayout, lineGap);
 
-    const minHeight = toFinite(style.minHeight, 34);
-    const baseHeight = toFinite(style.height, minHeight);
+    const minHeight = this.toFinite(style.minHeight, 34);
+    const baseHeight = this.toFinite(style.height, minHeight);
     const contentHeight = Math.max(baseHeight - paddingY, intrinsicLayout.lineHeight);
     const dynamicHeight = totalTextHeight + paddingY;
 
-    const height = clamp(
+    const height = this.clamp(
       autoGrow ? Math.max(contentHeight + paddingY, dynamicHeight) : baseHeight,
       minHeight,
       maxHeight
@@ -52,21 +53,19 @@ export class InputBehavior extends Behavior {
 
   render(node, ctx) {
     const layout = node.layout ?? node.bounds;
-    const { x, y, width, height } = layout;
     const style = node.style ?? {};
     const focused = Boolean(node.focused);
-    const lineGap = toFinite(style.lineGap, 2);
+    const lineGap = this.toFinite(style.lineGap, 2);
 
-    // Background
-    ctx.fillStyle = style.background ?? "#111827";
-    ctx.fillRect(x, y, width, height);
-
-    // Border
-    ctx.lineWidth = style.borderWidth ?? 1;
-    ctx.strokeStyle = focused
-      ? (style.focusBorderColor ?? "#60A5FA")
-      : (style.borderColor ?? "#374151");
-    ctx.strokeRect(x, y, width, height);
+    renderBoxBackground(ctx, layout, style, {
+      defaultBackground: "#111827",
+      alwaysFill: true
+    });
+    renderBoxBorder(ctx, layout, style, {
+      borderColor: focused
+        ? (style.focusBorderColor ?? "#60A5FA")
+        : (style.borderColor ?? "#374151")
+    });
 
     // Text
     const valueText = String(node.text?.value ?? "");
@@ -81,33 +80,25 @@ export class InputBehavior extends Behavior {
       ? (style.placeholderColor ?? "#6B7280")
       : (style.color ?? "#F9FAFB");
 
-    const paddingLeft = layout?.padding?.left ?? (toFinite(style.paddingLeft, 10) + toFinite(style.paddingX, 0));
-    const paddingRight = layout?.padding?.right ?? (toFinite(style.paddingRight, 0) + toFinite(style.paddingX, 0));
-    const paddingTop = layout?.padding?.top ?? (toFinite(style.paddingTop, 0) + toFinite(style.paddingY, 0));
-    const paddingBottom = layout?.padding?.bottom ?? (toFinite(style.paddingBottom, 0) + toFinite(style.paddingY, 0));
-
-    const contentX = layout?.contentX ?? (x + paddingLeft);
-    const contentWidth = Math.max(0, layout?.contentWidth ?? (width - paddingLeft - paddingRight));
-    const contentHeight = Math.max(0, layout?.contentHeight ?? (height - paddingTop - paddingBottom));
-
-    const contentY = y + paddingTop;
+    const padding = resolvePadding(style, this.toFinite.bind(this), { left: 10 });
+    const content = resolveContentRect(layout, node.layout, padding);
 
     const renderLayout = TextLayoutCalculator.calculateLayout(
       renderText,
       ctx,
-      contentWidth,
+      content.contentWidth,
       ctx.font
     );
 
     ctx.save();
     ctx.beginPath();
-    ctx.rect(contentX, y + paddingTop, contentWidth, contentHeight);
+    ctx.rect(content.contentX, content.contentY, content.contentWidth, content.contentHeight);
     ctx.clip();
 
     for (let index = 0; index < renderLayout.lines.length; index++) {
       const line = renderLayout.lines[index];
-      const lineY = contentY + index * (renderLayout.lineHeight + lineGap);
-      ctx.fillText(line.text, contentX, lineY);
+      const lineY = content.contentY + index * (renderLayout.lineHeight + lineGap);
+      ctx.fillText(line.text, content.contentX, lineY);
     }
 
     ctx.restore();
@@ -116,7 +107,7 @@ export class InputBehavior extends Behavior {
     // Calculate and store detailed text layout for overlay renderer
     // -------------------------------------------------------
     const font = node.text?.font ?? style.font ?? "14px sans-serif";
-    const textContentWidth = Math.max(0, (layout?.contentWidth ?? (width - paddingLeft - paddingRight)));
+    const textContentWidth = content.contentWidth;
 
     const textLayout = TextLayoutCalculator.calculateLayout(
       node.text?.value ?? "",
@@ -149,15 +140,6 @@ export class InputBehavior extends Behavior {
 // -------------------------------------------------------
 // Utilities
 // -------------------------------------------------------
-
-function toFinite(value, fallback) {
-  const number = Number(value);
-  return Number.isFinite(number) ? number : fallback;
-}
-
-function clamp(value, min, max) {
-  return Math.min(Math.max(value, min), max);
-}
 
 function calculateTotalTextHeight(layout, lineGap) {
   const lineCount = layout?.lines?.length ?? 0;

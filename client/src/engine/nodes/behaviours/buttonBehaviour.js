@@ -1,5 +1,6 @@
 import { roundRect } from "../../utils/roundRect.js";
 import { Behavior } from "./Behaviour.js";
+import { parseFontSize } from "./textBoxHelpers.js";
 
 export class ButtonBehavior extends Behavior {
   measure(node, constraints, ctx) {
@@ -15,7 +16,7 @@ export class ButtonBehavior extends Behavior {
 
     const width = Math.min(textWidth + paddingX * 2, constraints.maxWidth);
     const height = Math.min(
-      Math.max(minHeight, paddingY * 2 + parseInt(node.style.font || "12px", 10)),
+      Math.max(minHeight, paddingY * 2 + parseFontSize(node.style.font || "12px")),
       constraints.maxHeight
     );
 

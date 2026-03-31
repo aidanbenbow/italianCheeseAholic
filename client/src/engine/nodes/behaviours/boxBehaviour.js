@@ -1,14 +1,14 @@
 import { Behavior } from "./Behaviour.js";
+import { renderBoxBackground, renderBoxBorder } from "./boxRenderHelpers.js";
 
 export class BoxBehavior extends Behavior {
   measure(node, constraints) {
     const style = node.style ?? {};
 
-    const maxWidth = Number.isFinite(constraints?.maxWidth) ? constraints.maxWidth : Infinity;
-    const maxHeight = Number.isFinite(constraints?.maxHeight) ? constraints.maxHeight : Infinity;
+    const { maxWidth, maxHeight } = this.normalizeConstraints(constraints);
 
-    const width = clamp(toFinite(style.width, 100), toFinite(style.minWidth, 0), maxWidth);
-    const height = clamp(toFinite(style.height, 100), toFinite(style.minHeight, 0), maxHeight);
+    const width = this.clamp(this.toFinite(style.width, 100), this.toFinite(style.minWidth, 0), maxWidth);
+    const height = this.clamp(this.toFinite(style.height, 100), this.toFinite(style.minHeight, 0), maxHeight);
 
     return {
       width: Number.isFinite(width) ? width : 0,
@@ -21,25 +21,12 @@ export class BoxBehavior extends Behavior {
   }
 
   render(node, ctx) {
-    const { x, y, width, height } = node.bounds;
     const style = node.style ?? {};
 
-    ctx.fillStyle = style.background ?? "#334155";
-    ctx.fillRect(x, y, width, height);
-
-    if (style.borderColor && (style.borderWidth ?? 0) > 0) {
-      ctx.lineWidth = style.borderWidth ?? 1;
-      ctx.strokeStyle = style.borderColor;
-      ctx.strokeRect(x, y, width, height);
-    }
+    renderBoxBackground(ctx, node.bounds, style, {
+      defaultBackground: "#334155",
+      alwaysFill: true
+    });
+    renderBoxBorder(ctx, node.bounds, style, { borderColor: style.borderColor });
   }
-}
-
-function toFinite(value, fallback) {
-  const number = Number(value);
-  return Number.isFinite(number) ? number : fallback;
-}
-
-function clamp(value, min, max) {
-  return Math.min(Math.max(value, min), max);
 }
