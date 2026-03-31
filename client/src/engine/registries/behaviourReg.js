@@ -7,6 +7,7 @@ import { TextBehavior } from "../nodes/behaviours/textBehaviour.js";
 import { BoxBehavior } from "../nodes/behaviours/boxBehaviour.js";
 import { InputBehavior } from "../nodes/behaviours/inputBehaviour.js";
 import { OverlayLayerBehavior } from "../nodes/behaviours/overlayLayerBehaviour.js";
+import { ScrollableBehavior } from "../nodes/behaviours/scrollableBehaviour.js";
 
 
 class BehaviorRegistry {
@@ -44,6 +45,7 @@ export function registerCoreBehaviours() {
   behaviorRegistry.register("box", BoxBehavior);
   behaviorRegistry.register("input", InputBehavior);
   behaviorRegistry.register("overlay", OverlayLayerBehavior);
+  behaviorRegistry.register("scrollable", ScrollableBehavior);
 
   coreBehaviorsRegistered = true;
 }

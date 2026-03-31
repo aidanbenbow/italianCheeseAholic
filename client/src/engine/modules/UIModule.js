@@ -1,7 +1,7 @@
 import { bind, bindProp, bindStyle, bindText, bindVisible } from "../core/bind.js";
 import { createAppStore } from "../core/createAppStore.js";
 import { createCrudStore } from "../core/createCrudStore.js";
-import { createBoxNode, createButtonNode, createInputNode, createTextNode } from "../core/primitives.js";
+import { createBoxNode, createButtonNode, createInputNode, createScrollableNode, createTextNode } from "../core/primitives.js";
 import { batch, computed, effect, signal } from "../core/reactive.js";
 import { behaviorRegistry } from "../registries/behaviourReg.js";
 import { BaseModule } from "./BaseModule.js";
@@ -78,6 +78,13 @@ export class UIModule extends BaseModule {
 
   createButtonNode(options = {}) {
     return createButtonNode({
+      context: this.engine.context,
+      ...options
+    });
+  }
+
+  createScrollableNode(options = {}) {
+    return createScrollableNode({
       context: this.engine.context,
       ...options
     });

@@ -13,6 +13,12 @@ export function mount(engine) {
   const bannerText = engine.ui.signal("New Article");
   let titleNodes = [];
 
+  const scrollNode = engine.ui.createScrollableNode({
+    id: "blog-scroll",
+    style: { background: "#0F172A" }
+  });
+  engine.ui.mountNode(scrollNode);
+
   const bannerNode = engine.ui.createTextNode({
     id: "blog-banner",
     style: {
@@ -105,13 +111,13 @@ export function mount(engine) {
     onPress: () => { onSaveArticle(); }
   });
 
-  engine.ui.mountNode(bannerNode);
-  engine.ui.mountNode(inputNode);
-  engine.ui.mountNode(excerptInputNode);
-  engine.ui.mountNode(contentInputNode);
-  engine.ui.mountNode(photoInputNode);
-  engine.ui.mountNode(statusInputNode);
-  engine.ui.mountNode(saveButton);
+  engine.ui.mountNode(bannerNode, scrollNode);
+  engine.ui.mountNode(inputNode, scrollNode);
+  engine.ui.mountNode(excerptInputNode, scrollNode);
+  engine.ui.mountNode(contentInputNode, scrollNode);
+  engine.ui.mountNode(photoInputNode, scrollNode);
+  engine.ui.mountNode(statusInputNode, scrollNode);
+  engine.ui.mountNode(saveButton, scrollNode);
 
   engine.ui.bindText(bannerNode, bannerText);
 
@@ -212,7 +218,7 @@ export function mount(engine) {
       });
 
       titleNodes.push(titleNode);
-      engine.ui.mountNode(titleNode);
+      engine.ui.mountNode(titleNode, scrollNode);
     });
   }
 

@@ -177,6 +177,10 @@ export class SceneNode {
       c.render(ctx);
     }
 
+    // postRender runs after all children — used for overlays (e.g. scrollbars)
+    // that must appear on top of child content.
+    this.behavior?.postRender?.(this, ctx);
+
     ctx.restore();
     this.lastRenderedBounds = cloneBounds(this.bounds);
     this.clearDirty(DIRTY_RENDER);

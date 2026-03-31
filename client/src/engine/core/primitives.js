@@ -124,3 +124,15 @@ function createBehaviorFromRegistry(type) {
   const BehaviorClass = behaviorRegistry.get(type);
   return new BehaviorClass(null);
 }
+
+export function createScrollableNode(options = {}) {
+  const { spacing = 12, ...rest } = options;
+  return new SceneNode({
+    visible: true,
+    ...rest,
+    behavior: new (behaviorRegistry.get("scrollable"))({ spacing }),
+    style: {
+      ...rest.style
+    }
+  });
+}
