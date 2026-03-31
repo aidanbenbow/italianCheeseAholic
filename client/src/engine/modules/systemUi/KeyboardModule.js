@@ -1,13 +1,5 @@
 import { SceneNode } from "../../nodes/sceneNode.js";
-
-const fullLayerBehavior = {
-  measure(node, constraints) {
-    return {
-      width: constraints?.maxWidth ?? 0,
-      height: constraints?.maxHeight ?? 0
-    };
-  }
-};
+import { createOverlayBehavior } from "./createOverlayBehavior.js";
 
 export class KeyboardModule {
   static create(engine) {
@@ -21,7 +13,7 @@ export class KeyboardModule {
     this.root = new SceneNode({
       id: "keyboard-layer",
       context: engine.context,
-      behavior: fullLayerBehavior,
+      behavior: createOverlayBehavior(),
       style: {
         x: 0,
         y: 0

@@ -1,4 +1,5 @@
 import { SceneNode } from "../../nodes/sceneNode.js";
+import { createOverlayBehavior } from "./createOverlayBehavior.js";
 
 const popupBehavior = {
   render(node, ctx) {
@@ -26,15 +27,6 @@ const backdropBehavior = {
   }
 };
 
-const fullLayerBehavior = {
-  measure(node, constraints) {
-    return {
-      width: constraints?.maxWidth ?? 0,
-      height: constraints?.maxHeight ?? 0
-    };
-  }
-};
-
 export class PopupModule {
   static create(engine) {
     return new PopupModule(engine);
@@ -42,13 +34,13 @@ export class PopupModule {
 
   constructor(engine) {
     this.engine = engine;
+    const overlayBehavior = createOverlayBehavior();
+    overlayBehavior.render = backdropBehavior.render;
+
     this.root = new SceneNode({
       id: "popup-layer",
       context: engine.context,
-      behavior: {
-        measure: fullLayerBehavior.measure,
-        render: backdropBehavior.render
-      },
+      behavior: overlayBehavior,
       style: {
         x: 0,
         y: 0,

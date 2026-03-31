@@ -1,4 +1,5 @@
 import { SceneNode } from "../../nodes/sceneNode.js";
+import { createOverlayBehavior } from "./createOverlayBehavior.js";
 
 const toastBehavior = {
   render(node, ctx) {
@@ -14,15 +15,6 @@ const toastBehavior = {
   }
 };
 
-const fullLayerBehavior = {
-  measure(node, constraints) {
-    return {
-      width: constraints?.maxWidth ?? 0,
-      height: constraints?.maxHeight ?? 0
-    };
-  }
-};
-
 export class ToastModule {
   static create(engine) {
     return new ToastModule(engine);
@@ -33,7 +25,7 @@ export class ToastModule {
     this.root = new SceneNode({
       id: "toast-layer",
       context: engine.context,
-      behavior: fullLayerBehavior,
+      behavior: createOverlayBehavior(),
       style: {
         x: 0,
         y: 0

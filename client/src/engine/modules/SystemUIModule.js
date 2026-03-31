@@ -3,16 +3,8 @@ import { PopupModule } from "./systemUi/PopupModule.js";
 import { KeyboardModule } from "./systemUi/KeyboardModule.js";
 import { ToastModule } from "./systemUi/ToastModule.js";
 import { DropdownModule } from "./systemUi/DropdownModule.js";
+import { createOverlayBehavior } from "./systemUi/createOverlayBehavior.js";
 import { BaseModule } from "./BaseModule.js";
-
-const fullLayerBehavior = {
-  measure(node, constraints) {
-    return {
-      width: constraints?.maxWidth ?? 0,
-      height: constraints?.maxHeight ?? 0
-    };
-  }
-};
 
 const debugMarkerBehavior = {
   render(node, ctx) {
@@ -51,7 +43,7 @@ export class SystemUIModule extends BaseModule {
     this.root = new SceneNode({
       id: "system-ui-root",
       context: this.engine.context,
-      behavior: fullLayerBehavior,
+      behavior: createOverlayBehavior(),
       style: {
         x: 0,
         y: 0,

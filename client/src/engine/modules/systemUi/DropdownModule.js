@@ -1,13 +1,5 @@
 import { SceneNode } from "../../nodes/sceneNode.js";
-
-const fullLayerBehavior = {
-  measure(node, constraints) {
-    return {
-      width: constraints?.maxWidth ?? 0,
-      height: constraints?.maxHeight ?? 0
-    };
-  }
-};
+import { createOverlayBehavior } from "./createOverlayBehavior.js";
 
 export class DropdownModule {
   static create(engine) {
@@ -19,7 +11,7 @@ export class DropdownModule {
     this.root = new SceneNode({
       id: "dropdown-layer",
       context: engine.context,
-      behavior: fullLayerBehavior,
+      behavior: createOverlayBehavior(),
       style: {
         x: 0,
         y: 0
