@@ -1,4 +1,6 @@
 import { bind, bindProp, bindStyle, bindText, bindVisible } from "../core/bind.js";
+import { createAppStore } from "../core/createAppStore.js";
+import { createCrudStore } from "../core/createCrudStore.js";
 import { createBoxNode, createButtonNode, createInputNode, createTextNode } from "../core/primitives.js";
 import { batch, computed, effect, signal } from "../core/reactive.js";
 import { behaviorRegistry } from "../registries/behaviourReg.js";
@@ -15,6 +17,8 @@ export class UIModule extends BaseModule {
     this.effect = effect;
     this.computed = computed;
     this.batch = batch;
+    this.createStore = createAppStore;
+    this.createCrudStore = createCrudStore;
   }
 
   contextExports() {

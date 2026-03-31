@@ -1,7 +1,16 @@
 export function mount(engine) {
   engine.context.debugFlags.logUiOnStart = true;
+
+  const crud = engine.ui.createCrudStore({
+    listUrl:     '/api/blog/articles',
+    saveUrl:     '/api/blog/articles',
+    itemsKey:    'articles',
+    onSaved:      ()      => engine.systemUI.toastLayer.show("Article saved"),
+    onSaveError:  (error) => { engine.systemUI.toastLayer.show("Save failed"); console.error("Blog article save failed", error); },
+    onLoadError:  (error) => console.error("Blog articles fetch failed", error),
+  });
+
   const bannerText = engine.ui.signal("New Article");
-  let articles = [];
   let titleNodes = [];
 
   const bannerNode = engine.ui.createTextNode({
@@ -93,7 +102,7 @@ export function mount(engine) {
       minHeight: 36,
       paddingX: 16
     },
-    onPress: () => { saveArticle(); }
+    onPress: () => { onSaveArticle(); }
   });
 
   engine.ui.mountNode(bannerNode);
@@ -106,12 +115,34 @@ export function mount(engine) {
 
   engine.ui.bindText(bannerNode, bannerText);
 
+  engine.ui.effect(() => {
+    const isLoading = crud.state.isLoading.value;
+    const count = crud.state.articles.value.length;
+    const hasError = Boolean(crud.state.error.value);
+
+    if (isLoading) {
+      bannerText.value = "Loading articles...";
+      return;
+    }
+
+    const syncLabel = hasError ? " (sync issue)" : "";
+    bannerText.value = `Blog ready (${count} article${count === 1 ? "" : "s"})${syncLabel}`;
+  });
+
+  engine.ui.effect(() => {
+    renderArticleTitles(crud.state.articles.value);
+  });
+
   engine.commands.execute('debug:inputPipeline');
 
- // loadArticles();
+  crud.load();
   engine.systemUI.toastLayer.show("Welcome!");
 
-  async function saveArticle() {
+  async function onSaveArticle() {
+    if (crud.state.isSaving.value) {
+      return;
+    }
+
     const title = inputNode.value.trim();
     const excerpt = excerptInputNode.value.trim();
     const content = contentInputNode.value.trim();
@@ -147,51 +178,20 @@ export function mount(engine) {
       updatedBy: "admin"
     };
 
-    try {
-      const response = await fetch("/api/blog/articles", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(articlePayload)
-      });
+    await crud.save(articlePayload);
 
-      const payload = await response.json();
-      if (!response.ok || !payload?.ok) {
-        throw new Error(payload?.error ?? "Failed to save article");
-      }
-
-      inputNode.value = "";
-  excerptInputNode.value = "";
-  contentInputNode.value = "";
-  photoInputNode.value = "";
-  statusInputNode.value = "draft";
-      engine.systemUI.toastLayer.show("Article saved");
-     // await loadArticles();
-    } catch (error) {
-      engine.systemUI.toastLayer.show("Save failed");
-      console.error("Blog article save failed", error);
+    if (crud.state.error.value) {
+      return;
     }
+
+    inputNode.value = "";
+    excerptInputNode.value = "";
+    contentInputNode.value = "";
+    photoInputNode.value = "";
+    statusInputNode.value = "draft";
   }
 
-  async function loadArticles() {
-    try {
-      const response = await fetch("/api/blog/articles");
-      const payload = await response.json();
-
-      if (!response.ok || !payload?.ok) {
-        throw new Error(payload?.error ?? "Failed to load articles");
-      }
-
-      articles = Array.isArray(payload.data) ? payload.data : [];
-      const count = articles.length;
-      bannerText.value = `Blog ready (${count} article${count === 1 ? "" : "s"})`;
-      renderArticleTitles();
-    } catch (error) {
-      bannerText.value = "Blog ready (articles unavailable)";
-      console.error("Blog articles fetch failed", error);
-    }
-  }
-
-  function renderArticleTitles() {
+  function renderArticleTitles(articles) {
     for (const node of titleNodes) {
       engine.ui.unmountNode(node);
     }
@@ -215,4 +215,5 @@ export function mount(engine) {
       engine.ui.mountNode(titleNode);
     });
   }
+
 }
