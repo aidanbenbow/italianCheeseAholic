@@ -1,6 +1,6 @@
 ﻿// /engine/modules/text/OverlayRenderer.js
 
-import { TextLayoutCalculator } from "../../utils/textLayoutCalculator.js";
+import { TextLayoutBridge } from "./layout/TextLayoutBridge.js";
 
 export class OverlayRenderer {
   constructor(system) {
@@ -80,7 +80,7 @@ export class OverlayRenderer {
     const textLayout = node.text?.getLayout?.();
     if (!nodeLayout || !textLayout) return;
 
-    const { lines, lineHeight, font } = textLayout;
+    const { lineHeight, font } = textLayout;
 
     ctx.save();
     ctx.font = font;
@@ -88,23 +88,8 @@ export class OverlayRenderer {
     ctx.lineWidth = 2;
 
     const caretPos = caret.index;
-    const textOriginX = nodeLayout.contentX;
-    const textOriginY = nodeLayout.contentY;
 
-    // Find which line the caret is on
-    const line = TextLayoutCalculator.findLineForIndex(caretPos, lines);
-   
-    if (!line) {
-      ctx.restore();
-      return;
-    }
-
-    const lineIndex = lines.indexOf(line);
-    const offsetInLine = caretPos - line.startIndex;
-    const beforeText = line.text.slice(0, offsetInLine);
-
-    const caretX = textOriginX + ctx.measureText(beforeText).width;
-    const caretY = textOriginY + lineIndex * lineHeight;
+    const { x: caretX, y: caretY } = TextLayoutBridge.indexToPosition(node, caretPos, ctx);
 
     ctx.beginPath();
     ctx.moveTo(caretX, caretY);

@@ -1,5 +1,7 @@
 // /engine/modules/text/CaretController.js
 
+import { TextLayoutBridge } from "./layout/TextLayoutBridge.js";
+
 export class CaretController {
   constructor(system) {
     this.system = system;
@@ -31,35 +33,10 @@ export class CaretController {
   // -------------------------------------------------------
 
   getScenePosition(ctx) {
-    const node = this.system.activeNode;
-    const nodeLayout = node?.layout;
-    const textLayout = node?.text?.getLayout?.();
-    if (!node || !nodeLayout || !textLayout) return { x: 0, y: 0 };
-
-    const { lines, lineHeight, font } = textLayout;
-    const caretIndex = this.index;
-
-    ctx.font = font;
-
-    // Find line containing caret
-    let lineIndex = 0;
-    let offsetInLine = 0;
-
-    for (let i = 0; i < lines.length; i++) {
-      const line = lines[i];
-      if (caretIndex >= line.startIndex && caretIndex <= line.endIndex) {
-        lineIndex = i;
-        offsetInLine = caretIndex - line.startIndex;
-        break;
-      }
-    }
-
-    const line = lines[lineIndex];
-    const beforeText = line.text.slice(0, offsetInLine);
-
-    const x = nodeLayout.contentX + ctx.measureText(beforeText).width;
-    const y = nodeLayout.contentY + lineIndex * lineHeight;
-
-    return { x, y };
+    return TextLayoutBridge.indexToPosition(
+      this.system.activeNode,
+      this.index,
+      ctx
+    );
   }
 }

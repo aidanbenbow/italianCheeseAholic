@@ -89,20 +89,23 @@ export class TextEditingSystem {
   startEditing(node) {
     if (!node) return;
     if (this.activeNode === node) {
+      this.syncFromNode();
       this.keyboard.enable();
       return;
     }
 
     this.activeNode = node;
 
-    // Load node text into model
-    const initialText = node.text?.value ?? "";
-   
-    this.model.setText(initialText);
+    // Sync node text into model (handles external updates / store reloads)
+    this.syncFromNode();
 
     // Reset caret + selection
     this.caret.moveToEnd();
     this.selection.clear();
+
+    // If a pointerdown arrived before activeNode was ready (first-click race),
+    // replay it now so the caret lands at the click position rather than end.
+    this.pointer.flushPendingDown();
 
     // Enable keyboard
     this.keyboard.enable();
@@ -119,6 +122,19 @@ export class TextEditingSystem {
     this.pastePrompt.hide();
 
     this.invalidate();
+  }
+
+  // -------------------------------------------------------
+  // Node → model sync
+  // -------------------------------------------------------
+
+  syncFromNode() {
+    if (!this.activeNode) return;
+
+    const nodeText = this.activeNode.getValue?.() ?? "";
+    if (nodeText !== this.model.getText()) {
+      this.model.setText(nodeText);
+    }
   }
 
   // -------------------------------------------------------

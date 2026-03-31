@@ -73,11 +73,13 @@ export class SelectionMenu {
   }
 
   showForSelection() {
-    const caretPos = this.system.caret.getScenePosition(
-      this.system.engine.renderer.context
-    );
+    const canvasManager = this.system.engine.context.canvasManager;
+    const ctx    = canvasManager?.getContext?.("main");
+    const canvas = canvasManager?.getCanvas?.("main");
+    if (!ctx || !canvas) return;
 
-    const canvas = this.system.engine.renderer.canvas;
+    const caretPos = this.system.caret.getScenePosition(ctx);
+
     const rect = canvas.getBoundingClientRect();
 
     const clientX = rect.left + (caretPos.x / canvas.width) * rect.width;
