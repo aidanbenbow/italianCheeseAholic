@@ -1,5 +1,5 @@
 
-import { registerDorcasHandlers } from "./handlers/DorcasHandlers.js";
+import { registerDorcasHandlers } from "./handlers/dorcasHandlers.js";
 import { DorcasRepository } from "./repositories/DorcasRepository.js";
 import DorcasService from "./services/DorcasService.js";
 
