@@ -1,9 +1,16 @@
+import { getSessionUser, requireAdminHttp } from "../../../../../shared/auth/http/sessionAuth.js";
+
 export function registerBlogHandlers(io, container) {
   io.on("connection", (socket) => {
     const blogService = container.resolve("blogService");
 
     socket.on("blog:create", async (data, callback) => {
       try {
+        if (socket.data?.user?.role !== "admin") {
+          callback?.({ ok: false, error: "Admin access required" });
+          return;
+        }
+
         const blogService = container.resolve("blogService");
         const title = typeof data?.title === "string" ? data.title.trim() : "";
 
@@ -22,8 +29,8 @@ export function registerBlogHandlers(io, container) {
           status: data?.status ?? "draft",
           createdAt: data?.createdAt ?? now,
           updatedAt: now,
-          createdBy: data?.createdBy ?? "system",
-          updatedBy: "system",
+          createdBy: socket.data.user.username ?? "system",
+          updatedBy: socket.data.user.username ?? "system",
           publishedAt: data?.publishedAt ?? 0,
           photo: data?.photo ?? ""
         };
@@ -56,9 +63,10 @@ export function registerBlogHandlers(io, container) {
 }
 
 export function registerBlogHttpRoutes(app, container, io) {
-  app.post("/api/blog/articles", async (req, res) => {
+  app.post("/api/blog/articles", requireAdminHttp, async (req, res) => {
     try {
       const blogService = container.resolve("blogService");
+      const sessionUser = getSessionUser(req);
       const rawTitle = typeof req.body?.title === "string" ? req.body.title : "";
       const title = rawTitle.trim();
 
@@ -77,8 +85,8 @@ export function registerBlogHttpRoutes(app, container, io) {
         status: req.body?.status ?? "draft",
         createdAt: req.body?.createdAt ?? now,
         updatedAt: now,
-        createdBy: req.body?.createdBy ?? "system",
-        updatedBy: "system",
+        createdBy: sessionUser?.username ?? "system",
+        updatedBy: sessionUser?.username ?? "system",
         publishedAt: req.body?.publishedAt ?? 0,
         photo: req.body?.photo ?? ""
       };

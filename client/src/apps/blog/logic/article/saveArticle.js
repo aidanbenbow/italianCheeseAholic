@@ -7,9 +7,10 @@ import { validateArticle } from "./validation.js";
  * @param {object} engine
  * @param {object} crud        – createCrudStore instance
  * @param {object} inputs      – { titleNode, excerptNode, contentNode, photoNode, statusNode }
+ * @param {object|null} currentUser
  * @returns {{ saved: boolean }}
  */
-export async function saveArticle(engine, crud, inputs) {
+export async function saveArticle(engine, crud, inputs, currentUser = null) {
   if (crud.state.isSaving.value) return { saved: false };
 
   const title           = inputs.titleNode.value.trim();
@@ -27,6 +28,7 @@ export async function saveArticle(engine, crud, inputs) {
   const status = requestedStatus === "published" ? "published" : "draft";
   const now    = Date.now();
   const slug   = slugify(title) || `article-${now}`;
+  const actor  = currentUser?.username ?? "system";
 
   await crud.save({
     articleId:   slug,
@@ -39,8 +41,8 @@ export async function saveArticle(engine, crud, inputs) {
     createdAt:   now,
     publishedAt: status === "published" ? now : 0,
     updatedAt:   now,
-    createdBy:   "admin",
-    updatedBy:   "admin",
+    createdBy:   actor,
+    updatedBy:   actor,
   });
 
   return { saved: !crud.state.error.value };

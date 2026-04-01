@@ -1,28 +1,31 @@
 /**
  * createArticleListItem
- * Returns a single text row node for the article list.
+ * Returns a single clickable row node for the article list.
  *
  * @param {object} engine
- * @param {{ article: object, index: number }} options
+ * @param {{ article: object, index: number, onOpen: (article: object) => void }} options
  * @returns SceneNode
  */
-export function createArticleListItem(engine, { article, index }) {
+export function createArticleListItem(engine, { article, index, onOpen }) {
   const title   = article.title || article.name || article.articleId || `Article ${index + 1}`;
   const excerpt = article.excerpt || "No excerpt";
 
-  const node = engine.ui.createTextNode({
+  const node = engine.ui.createButtonNode({
     id:    `blog-article-${index}`,
+    label: `${index + 1}. ${title} — ${excerpt}`,
     style: {
       width:      420,
       height:     36,
       background: index % 2 === 0 ? "#1F2937" : "#111827",
-      color:      "#F3F4F6",
+      hoverBackground: "#374151",
+      pressedBackground: "#4B5563",
+      textColor:      "#F3F4F6",
       font:       "12px sans-serif",
       paddingLeft: 12,
+      borderColor: "#374151",
     },
+    onPress: () => onOpen?.(article),
   });
-
-  node.text = `${index + 1}. ${title} — ${excerpt}`;
 
   return node;
 }

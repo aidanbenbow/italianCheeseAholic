@@ -1,8 +1,8 @@
 import { AuthRepository } from "./repositories/AuthRepository.js";
 import { UserAuth } from "./services/UserAuth.js";
-import { registerAuthHandlers } from "./handlers/authHandlers.js";
+import { registerAuthHandlers, registerAuthHttpRoutes } from "./handlers/authHandlers.js";
 
-export function registerBackend(container, io) {
+export function registerBackend(container, io, app) {
   container.singleton("authRepository", () =>
     new AuthRepository(container.resolve("docClient"))
   );
@@ -15,4 +15,7 @@ export function registerBackend(container, io) {
   );
 
   registerAuthHandlers(io, container);
+  if (app) {
+    registerAuthHttpRoutes(app, container);
+  }
 }

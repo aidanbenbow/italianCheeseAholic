@@ -198,6 +198,7 @@ export class SceneNode {
   }
 
   hitTest(point) {
+    if (!this.visible) return null;
     if (!this.hitTestable) return null;
 
     // 1. Children first (reverse order)

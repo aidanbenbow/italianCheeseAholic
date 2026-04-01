@@ -4,13 +4,18 @@ export class UserAuth {
     this.passwordHasher = passwordHasher;
   }
 
-  async registerUser(email, password) {
+  async registerUser(username, password, role = "user") {
     const hashed = await this.passwordHasher.hash(password);
-    return this.authRepository.createUser({ email, password: hashed });
+    return this.authRepository.createUser({
+      userId: username,
+      username,
+      password: hashed,
+      role,
+    });
   }
 
-  async authenticate(email, password) {
-    const user = await this.authRepository.getUserByEmail(email);
+  async authenticate(username, password) {
+    const user = await this.authRepository.getUserByUsername(username);
     if (!user) return null;
 
     const valid = await this.passwordHasher.compare(password, user.password);

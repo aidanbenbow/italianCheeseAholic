@@ -9,6 +9,7 @@ dotenv.config({ path: path.resolve(__dirname, ".env") });
 
 import express from "express";
 import http from "http";
+import session from "express-session";
 import { Server } from "socket.io";
 
 import { registerStatic } from "./src/http/static.js";
@@ -38,9 +39,21 @@ const io = new Server(server, {
 // Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(session({
+  name: "italiancheeseaholic.sid",
+  secret: process.env.SESSION_SECRET || "change-this-session-secret",
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    maxAge: 1000 * 60 * 60 * 8,
+  },
+}));
 
 // Register backend modules
-registerAuth(container, io);
+registerAuth(container, io, app);
 registerFormBuilder(container, io);
 registerDorcas(container, io);
 registerBlog(container, io, app);

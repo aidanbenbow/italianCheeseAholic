@@ -13,6 +13,7 @@ export function createPageSwitcher(engine) {
       if (mountedPageNode && mountedPageNode !== pageNode) {
         engine.ui.unmountNode(mountedPageNode);
       }
+
       if (mountedPageNode !== pageNode) {
         engine.ui.mountNode(pageNode);
         mountedPageNode = pageNode;
