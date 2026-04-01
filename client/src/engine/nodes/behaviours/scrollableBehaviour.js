@@ -198,4 +198,8 @@ export class ScrollableBehavior extends Behavior {
     node.requestRender?.();
     return true; // consumed — stop propagation
   }
+
+  onEventBubble(node, event) {
+    return this.onEvent(node, event);
+  }
 }
