@@ -1,7 +1,7 @@
 
 import { docClient } from "../infrastructure/db/dynamoClient.js";
 import { passwordHasher } from "../infrastructure/security/passwordHasher.js";
-import { Container } from "./container.js";
+import { Container } from "./Container.js";
 
 export function buildContainer() {
   const c = new Container();
