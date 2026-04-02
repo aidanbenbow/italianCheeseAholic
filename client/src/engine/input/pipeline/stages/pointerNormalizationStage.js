@@ -1,10 +1,11 @@
 import { InputPipelineStage } from "../inputPipelineStage.js";
 
 export class PointerNormalizationStage extends InputPipelineStage {
-  constructor({ canvas, scenePipeline, hitTest, config } = {}) {
+  constructor({ canvas, scenePipeline, overlayPipeline, hitTest, config } = {}) {
     super({ config });
     this.canvas = canvas;
     this.scenePipeline = scenePipeline;
+    this.overlayPipeline = overlayPipeline;
     this.hitTest = hitTest;
     this.lastPointerPositions = new Map();
   }
@@ -117,9 +118,14 @@ export class PointerNormalizationStage extends InputPipelineStage {
       return { x: 0, y: 0 };
     }
 
+    const logicalWidth = this.canvas?._logicalWidth ?? this.canvas?.width ?? rect.width;
+    const logicalHeight = this.canvas?._logicalHeight ?? this.canvas?.height ?? rect.height;
+    const scaleX = logicalWidth / rect.width;
+    const scaleY = logicalHeight / rect.height;
+
     return {
-      x: (sample?.clientX ?? 0) - rect.left,
-      y: (sample?.clientY ?? 0) - rect.top
+      x: ((sample?.clientX ?? 0) - rect.left) * scaleX,
+      y: ((sample?.clientY ?? 0) - rect.top) * scaleY
     };
   }
 
@@ -143,8 +149,24 @@ export class PointerNormalizationStage extends InputPipelineStage {
   }
 
   _resolveTarget(sceneX, sceneY) {
+    if (!this.hitTest?.hitTest) return null;
+
+    const overlayRoot = this.overlayPipeline?.root;
+    if (overlayRoot) {
+      const overlayTarget = this.hitTest.hitTest(
+        overlayRoot,
+        sceneX,
+        sceneY,
+        this.overlayPipeline?.rendererContext
+      );
+
+      if (overlayTarget && overlayTarget !== overlayRoot) {
+        return overlayTarget;
+      }
+    }
+
     const root = this.scenePipeline?.root;
-    if (!root || !this.hitTest?.hitTest) return null;
+    if (!root) return null;
 
     return this.hitTest.hitTest(
       root,

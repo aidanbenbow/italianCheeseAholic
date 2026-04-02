@@ -34,6 +34,7 @@ export class InputModule extends BaseModule {
   attach() {
     this.canvas = this.engine.context.canvasManager?.getCanvas?.("main") ?? null;
     this.scenePipeline = this.engine.context.renderPipelines?.main ?? null;
+    this.systemPipeline = this.engine.context.renderPipelines?.system ?? null;
 
     if (!this.canvas) {
       console.warn("InputModule: main canvas is unavailable; input pipeline was not attached");
@@ -52,6 +53,7 @@ export class InputModule extends BaseModule {
     const normalize = new PointerNormalizationStage({
       canvas: this.canvas,
       scenePipeline: this.scenePipeline,
+      overlayPipeline: this.systemPipeline,
       hitTest: this.hitTest
     });
 
@@ -96,5 +98,6 @@ export class InputModule extends BaseModule {
     this.engine.context.editor = null;
     this.canvas = null;
     this.scenePipeline = null;
+    this.systemPipeline = null;
   }
 }

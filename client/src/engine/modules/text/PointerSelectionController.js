@@ -105,7 +105,12 @@ export class PointerSelectionController {
     if (this.system.selection.hasRange()) {
       this.system.menu.showForSelection();
     } else {
-      this.system.menu.hide();
+      const activeNode = this.system.activeNode;
+      if (activeNode?.type === "input") {
+        this.system.menu.showForInputNode(activeNode);
+      } else {
+        this.system.menu.hide();
+      }
     }
 
     this.system.invalidate();

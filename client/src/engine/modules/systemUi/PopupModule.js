@@ -34,6 +34,7 @@ export class PopupModule {
 
   constructor(engine) {
     this.engine = engine;
+    this.defaultBackdrop = "rgba(0,0,0,0.25)";
     const overlayBehavior = createOverlayBehavior();
     overlayBehavior.render = backdropBehavior.render;
 
@@ -44,9 +45,10 @@ export class PopupModule {
       style: {
         x: 0,
         y: 0,
-        background: "rgba(0,0,0,0.25)"
+        background: this.defaultBackdrop
       }
     });
+    this.root.hitTestable = false;
     this.root.visible = false;
     this.popups = new Map();
   }
@@ -71,10 +73,9 @@ export class PopupModule {
       }
     });
     popup.content = String(content ?? "");
-
-    this.popups.set(id, popup);
-    this.root.add(popup);
-    this.root.visible = true;
+    this._attachPopupEntry(id, popup, {
+      backdrop: options.backdrop !== false
+    });
     
     // Only emit if someone is listening
     if (this.engine.eventListeners.get("popup:shown")?.size) {
@@ -82,13 +83,31 @@ export class PopupModule {
     }
   }
 
+  showNode(id, node, options = {}) {
+    if (this.popups.has(id)) {
+      console.warn(`Popup "${id}" already exists`);
+      return;
+    }
+    if (!node) return;
+
+    node.context ??= this.engine.context;
+
+    this._attachPopupEntry(id, node, {
+      backdrop: options.backdrop === true
+    });
+
+    if (this.engine.eventListeners.get("popup:shown")?.size) {
+      this.engine.emit("popup:shown", { id, customNode: true });
+    }
+  }
+
   // Hide a popup
   hide(id) {
-    const popup = this.popups.get(id);
-    if (popup) {
-      this.root.remove(popup);
+    const entry = this.popups.get(id);
+    if (entry) {
+      this.root.remove(entry.node);
       this.popups.delete(id);
-      this.root.visible = this.popups.size > 0;
+      this._syncLayerVisibility();
       
       // Only emit if someone is listening
       if (this.engine.eventListeners.get("popup:hidden")?.size) {
@@ -98,6 +117,24 @@ export class PopupModule {
   }
 
   destroy() {
+    for (const entry of this.popups.values()) {
+      this.root.remove(entry.node);
+    }
     this.popups.clear();
+    this._syncLayerVisibility();
+  }
+
+  _attachPopupEntry(id, node, { backdrop = true } = {}) {
+    this.popups.set(id, { node, backdrop: backdrop === true });
+    this.root.add(node);
+    this._syncLayerVisibility();
+  }
+
+  _syncLayerVisibility() {
+    this.root.visible = this.popups.size > 0;
+    const hasBackdropPopup = Array.from(this.popups.values()).some(entry => entry.backdrop === true);
+    this.root.style.background = hasBackdropPopup
+      ? this.defaultBackdrop
+      : "transparent";
   }
 }

@@ -24,6 +24,14 @@ export class SelectionController {
     };
   }
 
+  getRangeText() {
+    const { start, end } = this.getRange();
+    if (start === end) return "";
+
+    const text = this.system.model.getText?.() ?? "";
+    return text.slice(start, end);
+  }
+
   collapseTo(pos) {
     this.start = this.end = this.anchor = pos;
   }

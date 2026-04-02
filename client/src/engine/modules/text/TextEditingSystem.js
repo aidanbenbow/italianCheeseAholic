@@ -91,6 +91,7 @@ export class TextEditingSystem {
     if (this.activeNode === node) {
       this.syncFromNode();
       this.keyboard.enable();
+      this.menu.showForInputNode(node);
       return;
     }
 
@@ -109,6 +110,7 @@ export class TextEditingSystem {
 
     // Enable keyboard
     this.keyboard.enable();
+    this.menu.showForInputNode(node);
 
     // Invalidate render
     this.invalidate();

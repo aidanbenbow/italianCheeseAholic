@@ -50,12 +50,17 @@ export class SystemUIModule extends BaseModule {
         background: "transparent"
       }
     });
+    this.root.hitTestable = false;
 
     // Initialize sub-modules
     this.popupLayer = PopupModule.create(this.engine);
     this.keyboardLayer = KeyboardModule.create(this.engine);
     this.toastLayer = ToastModule.create(this.engine);
     this.dropDownLayer = DropdownModule.create(this.engine);
+    this.popupLayer.root.hitTestable = false;
+    this.keyboardLayer.root.hitTestable = false;
+    this.toastLayer.root.hitTestable = false;
+    this.dropDownLayer.root.hitTestable = false;
 
     // Attach pipeline FIRST so it is listening before children are added
     const systemPipeline = this.engine.renderer?.getPipeline("system");
@@ -81,6 +86,7 @@ export class SystemUIModule extends BaseModule {
           height: 44
         }
       });
+      debugMarker.hitTestable = false;
       this.root.add(debugMarker);
       setTimeout(() => {
         this.root?.remove(debugMarker);
