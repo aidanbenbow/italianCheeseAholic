@@ -111,6 +111,8 @@ export class RendererModule {
   }
 
   detach() {
+    this.canvasManager?.destroy?.();
+
     this.pipelines = {};
     this.contexts = {};
     this.canvasManager = null;

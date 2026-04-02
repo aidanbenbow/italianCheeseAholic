@@ -27,6 +27,71 @@ export class Behavior {
     };
   }
 
+  resolveRawDimension(value, { axis, constraints, node, style }) {
+    const resolvedStyle = style ?? node?.style ?? {};
+
+    if (typeof value === "function") {
+      return this.resolveRawDimension(
+        value({ axis, constraints, node, style: resolvedStyle }),
+        { axis, constraints, node, style: resolvedStyle }
+      );
+    }
+
+    if (typeof value === "number") {
+      return Number.isFinite(value) ? value : NaN;
+    }
+
+    if (typeof value !== "string") {
+      return NaN;
+    }
+
+    const input = value.trim().toLowerCase();
+    if (!input) return NaN;
+
+    const axisLimit = axis === "width"
+      ? Number(constraints?.maxWidth)
+      : Number(constraints?.maxHeight);
+
+    if (input.endsWith("%")) {
+      const percent = Number(input.slice(0, -1));
+      if (!Number.isFinite(percent) || !Number.isFinite(axisLimit)) return NaN;
+      return (axisLimit * percent) / 100;
+    }
+
+    if (input.endsWith("vw")) {
+      const percent = Number(input.slice(0, -2));
+      const viewportWidth = Number(constraints?.maxWidth);
+      if (!Number.isFinite(percent) || !Number.isFinite(viewportWidth)) return NaN;
+      return (viewportWidth * percent) / 100;
+    }
+
+    if (input.endsWith("vh")) {
+      const percent = Number(input.slice(0, -2));
+      const viewportHeight = Number(constraints?.maxHeight);
+      if (!Number.isFinite(percent) || !Number.isFinite(viewportHeight)) return NaN;
+      return (viewportHeight * percent) / 100;
+    }
+
+    const numeric = Number(input);
+    return Number.isFinite(numeric) ? numeric : NaN;
+  }
+
+  resolveDimension(value, {
+    axis,
+    constraints,
+    node,
+    style,
+    fallback = 0
+  }) {
+    let resolved = this.resolveRawDimension(value, { axis, constraints, node, style });
+
+    if (!Number.isFinite(resolved)) {
+      resolved = fallback;
+    }
+
+    return Math.max(0, resolved);
+  }
+
   layoutAbsoluteChildren(node, bounds, ctx) {
     const childConstraints = {
       maxWidth: bounds.width,

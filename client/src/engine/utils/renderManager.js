@@ -48,7 +48,9 @@ export class RenderManager {
   // Canvas clearing
   // -------------------------------------------------------
   clearAll(ctx) {
-    ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+    const logicalWidth = ctx.canvas._logicalWidth ?? ctx.canvas.width;
+    const logicalHeight = ctx.canvas._logicalHeight ?? ctx.canvas.height;
+    ctx.clearRect(0, 0, logicalWidth, logicalHeight);
   }
 
   clearRect(ctx, rect) {

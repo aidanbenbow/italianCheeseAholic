@@ -7,8 +7,43 @@ export class BoxBehavior extends Behavior {
 
     const { maxWidth, maxHeight } = this.normalizeConstraints(constraints);
 
-    const width = this.clamp(this.toFinite(style.width, 100), this.toFinite(style.minWidth, 0), maxWidth);
-    const height = this.clamp(this.toFinite(style.height, 100), this.toFinite(style.minHeight, 0), maxHeight);
+    const minWidth = this.resolveDimension(style.minWidth, {
+      axis: "width",
+      constraints,
+      node,
+      style,
+      fallback: 0
+    });
+    const minHeight = this.resolveDimension(style.minHeight, {
+      axis: "height",
+      constraints,
+      node,
+      style,
+      fallback: 0
+    });
+
+    const width = this.clamp(
+      this.resolveDimension(style.width, {
+        axis: "width",
+        constraints,
+        node,
+        style,
+        fallback: 100
+      }),
+      minWidth,
+      maxWidth
+    );
+    const height = this.clamp(
+      this.resolveDimension(style.height, {
+        axis: "height",
+        constraints,
+        node,
+        style,
+        fallback: 100
+      }),
+      minHeight,
+      maxHeight
+    );
 
     return {
       width: Number.isFinite(width) ? width : 0,

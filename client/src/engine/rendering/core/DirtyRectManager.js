@@ -65,9 +65,11 @@ export class DirtyRectManager {
     const panelWidth = 190;
     const panelHeight = 186;
     const margin = 8;
+    const logicalWidth =
+      rendererContext.canvas._logicalWidth ?? rendererContext.canvas.width;
     const x = Math.max(
       margin,
-      rendererContext.canvas.width - panelWidth - margin
+      logicalWidth - panelWidth - margin
     );
     const y = margin;
 

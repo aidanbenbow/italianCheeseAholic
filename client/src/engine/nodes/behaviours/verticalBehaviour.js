@@ -9,6 +9,8 @@ export class VerticalBehavior extends Behavior {
     }
 
     measure(node, constraints, ctx) {
+        const style = node.style ?? {};
+        const { maxWidth: constraintMaxWidth, maxHeight: constraintMaxHeight } = this.normalizeConstraints(constraints);
         let maxWidth = 0;
         let totalHeight = 0;
 
@@ -20,9 +22,59 @@ export class VerticalBehavior extends Behavior {
 
         totalHeight = Math.max(0, totalHeight - this.spacing);
 
+        const minWidth = this.resolveDimension(style.minWidth, {
+            axis: "width",
+            constraints,
+            node,
+            style,
+            fallback: 0
+        });
+        const minHeight = this.resolveDimension(style.minHeight, {
+            axis: "height",
+            constraints,
+            node,
+            style,
+            fallback: 0
+        });
+
+        const maxStyleWidth = this.resolveRawDimension(style.maxWidth, {
+            axis: "width",
+            constraints,
+            node,
+            style
+        });
+        const maxStyleHeight = this.resolveRawDimension(style.maxHeight, {
+            axis: "height",
+            constraints,
+            node,
+            style
+        });
+
+        const widthCap = Number.isFinite(maxStyleWidth)
+            ? Math.min(constraintMaxWidth, maxStyleWidth)
+            : constraintMaxWidth;
+        const heightCap = Number.isFinite(maxStyleHeight)
+            ? Math.min(constraintMaxHeight, maxStyleHeight)
+            : constraintMaxHeight;
+
+        const preferredWidth = this.resolveDimension(style.width, {
+            axis: "width",
+            constraints,
+            node,
+            style,
+            fallback: maxWidth
+        });
+        const preferredHeight = this.resolveDimension(style.height, {
+            axis: "height",
+            constraints,
+            node,
+            style,
+            fallback: totalHeight
+        });
+
         return {
-            width: Math.min(maxWidth, constraints.maxWidth ?? Infinity),
-            height: Math.min(totalHeight, constraints.maxHeight ?? Infinity)
+            width: this.clamp(preferredWidth, minWidth, widthCap),
+            height: this.clamp(preferredHeight, minHeight, heightCap)
         };
     }
 

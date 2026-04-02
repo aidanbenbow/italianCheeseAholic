@@ -142,6 +142,53 @@ Rendering
 - drawSelection()
 - drawCaret()
 
+## Responsive node sizing
+
+Node and behavior measurement now supports screen-adaptive dimensions through layout constraints.
+
+### Supported style values
+
+- Number: `width: 320`
+- Percent of parent constraints: `width: "80%"`
+- Viewport-relative units: `width: "90vw"`, `height: "60vh"`
+- Function-based value: `width: ({ constraints }) => constraints.maxWidth < 768 ? 320 : 520`
+
+You can use the same value types for:
+
+- `width`, `height`
+- `minWidth`, `maxWidth`
+- `minHeight`, `maxHeight`
+
+### Where this works
+
+- Base fallback measurement in [client/src/engine/nodes/sceneNode.js](client/src/engine/nodes/sceneNode.js)
+- Behaviors:
+  - [client/src/engine/nodes/behaviours/boxBehaviour.js](client/src/engine/nodes/behaviours/boxBehaviour.js)
+  - [client/src/engine/nodes/behaviours/textBehaviour.js](client/src/engine/nodes/behaviours/textBehaviour.js)
+  - [client/src/engine/nodes/behaviours/buttonBehaviour.js](client/src/engine/nodes/behaviours/buttonBehaviour.js)
+  - [client/src/engine/nodes/behaviours/inputBehaviour.js](client/src/engine/nodes/behaviours/inputBehaviour.js)
+  - [client/src/engine/nodes/behaviours/verticalBehaviour.js](client/src/engine/nodes/behaviours/verticalBehaviour.js)
+  - [client/src/engine/nodes/behaviours/scrollableBehaviour.js](client/src/engine/nodes/behaviours/scrollableBehaviour.js)
+  - [client/src/engine/nodes/behaviours/overlayLayerBehaviour.js](client/src/engine/nodes/behaviours/overlayLayerBehaviour.js)
+
+### Example
+
+```js
+const cardStyle = {
+  width: "90%",
+  maxWidth: 640,
+  minWidth: 280,
+  height: ({ constraints }) => constraints.maxWidth < 768 ? 180 : 240,
+  minHeight: 140
+};
+```
+
+### Notes
+
+- Percent and `vw`/`vh` resolve against the current render/layout constraints.
+- If a behavior provides custom `measure`, it must use the shared resolvers to remain responsive.
+- Changing any of these style keys at runtime triggers layout recalculation.
+
 
 
 

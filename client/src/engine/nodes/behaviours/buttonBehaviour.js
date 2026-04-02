@@ -7,18 +7,63 @@ export class ButtonBehavior extends Behavior {
     const label = node.label ?? "";
     const paddingX = node.style.paddingX ?? 12;
     const paddingY = node.style.paddingY ?? 6;
-    const minHeight = node.style.minHeight ?? 30;
 
     ctx.save();
     ctx.font = node.style.font || "12px sans-serif";
     const textWidth = ctx.measureText(label).width;
     ctx.restore();
 
-    const width = Math.min(textWidth + paddingX * 2, constraints.maxWidth);
-    const height = Math.min(
-      Math.max(minHeight, paddingY * 2 + parseFontSize(node.style.font || "12px")),
-      constraints.maxHeight
-    );
+    const { maxWidth, maxHeight } = this.normalizeConstraints(constraints);
+    const intrinsicWidth = textWidth + paddingX * 2;
+    const intrinsicHeight = paddingY * 2 + parseFontSize(node.style.font || "12px");
+
+    const minWidth = this.resolveDimension(node.style.minWidth, {
+      axis: "width",
+      constraints,
+      node,
+      style: node.style,
+      fallback: 0
+    });
+    const minHeight = this.resolveDimension(node.style.minHeight, {
+      axis: "height",
+      constraints,
+      node,
+      style: node.style,
+      fallback: 30
+    });
+    const maxStyleWidth = this.resolveRawDimension(node.style.maxWidth, {
+      axis: "width",
+      constraints,
+      node,
+      style: node.style
+    });
+    const maxStyleHeight = this.resolveRawDimension(node.style.maxHeight, {
+      axis: "height",
+      constraints,
+      node,
+      style: node.style
+    });
+
+    const widthCap = Number.isFinite(maxStyleWidth) ? Math.min(maxWidth, maxStyleWidth) : maxWidth;
+    const heightCap = Number.isFinite(maxStyleHeight) ? Math.min(maxHeight, maxStyleHeight) : maxHeight;
+
+    const baseWidth = this.resolveDimension(node.style.width, {
+      axis: "width",
+      constraints,
+      node,
+      style: node.style,
+      fallback: intrinsicWidth
+    });
+    const baseHeight = this.resolveDimension(node.style.height, {
+      axis: "height",
+      constraints,
+      node,
+      style: node.style,
+      fallback: Math.max(minHeight, intrinsicHeight)
+    });
+
+    const width = this.clamp(baseWidth, minWidth, widthCap);
+    const height = this.clamp(baseHeight, minHeight, heightCap);
 
     return { width, height };
   }

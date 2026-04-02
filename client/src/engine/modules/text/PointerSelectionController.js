@@ -130,9 +130,11 @@ export class PointerSelectionController {
     if (!canvas) return { x: e.clientX, y: e.clientY };
 
     const rect = canvas.getBoundingClientRect();
+    const logicalWidth = canvas._logicalWidth ?? canvas.width;
+    const logicalHeight = canvas._logicalHeight ?? canvas.height;
 
-    const scaleX = canvas.width  / rect.width;
-    const scaleY = canvas.height / rect.height;
+    const scaleX = logicalWidth / rect.width;
+    const scaleY = logicalHeight / rect.height;
 
     return {
       x: (e.clientX - rect.left) * scaleX,

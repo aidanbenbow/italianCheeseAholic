@@ -25,27 +25,66 @@ export class InputBehavior extends Behavior {
       this.toFinite(style.paddingY, 0) * 2;
 
     const minWidth = this.toFinite(style.minWidth, 120);
-    const baseWidth = this.toFinite(style.width, minWidth);
+    const minWidthResolved = this.resolveDimension(style.minWidth, {
+      axis: "width",
+      constraints,
+      node,
+      style,
+      fallback: 120
+    });
+    const maxWidthStyle = this.resolveRawDimension(style.maxWidth, {
+      axis: "width",
+      constraints,
+      node,
+      style
+    });
+    const baseWidth = this.resolveDimension(style.width, {
+      axis: "width",
+      constraints,
+      node,
+      style,
+      fallback: minWidthResolved
+    });
+    const widthMax = Number.isFinite(maxWidthStyle) ? Math.min(maxWidth, maxWidthStyle) : maxWidth;
 
     const width = this.clamp(
       baseWidth,
-      minWidth,
-      maxWidth
+      minWidthResolved,
+      widthMax
     );
 
     const contentWidth = Math.max(0, width - paddingX);
     const intrinsicLayout = TextLayoutCalculator.calculateLayout(text, ctx, contentWidth, font);
     const totalTextHeight = calculateTotalTextHeight(intrinsicLayout, lineGap);
 
-    const minHeight = this.toFinite(style.minHeight, 34);
-    const baseHeight = this.toFinite(style.height, minHeight);
+    const minHeight = this.resolveDimension(style.minHeight, {
+      axis: "height",
+      constraints,
+      node,
+      style,
+      fallback: 34
+    });
+    const maxHeightStyle = this.resolveRawDimension(style.maxHeight, {
+      axis: "height",
+      constraints,
+      node,
+      style
+    });
+    const baseHeight = this.resolveDimension(style.height, {
+      axis: "height",
+      constraints,
+      node,
+      style,
+      fallback: minHeight
+    });
     const contentHeight = Math.max(baseHeight - paddingY, intrinsicLayout.lineHeight);
     const dynamicHeight = totalTextHeight + paddingY;
+    const heightMax = Number.isFinite(maxHeightStyle) ? Math.min(maxHeight, maxHeightStyle) : maxHeight;
 
     const height = this.clamp(
       autoGrow ? Math.max(contentHeight + paddingY, dynamicHeight) : baseHeight,
       minHeight,
-      maxHeight
+      heightMax
     );
 
     return { width, height };

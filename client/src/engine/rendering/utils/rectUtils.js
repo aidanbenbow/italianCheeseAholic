@@ -69,20 +69,24 @@ export function mergeOverlappingRects(rects) {
 
 export function getFullCanvasRect(ctx) {
   if (!ctx?.canvas) return null;
+  const logicalWidth = ctx.canvas._logicalWidth ?? ctx.canvas.width;
+  const logicalHeight = ctx.canvas._logicalHeight ?? ctx.canvas.height;
   return {
     x: 0,
     y: 0,
-    width: ctx.canvas.width,
-    height: ctx.canvas.height
+    width: logicalWidth,
+    height: logicalHeight
   };
 }
 
 export function rectMatchesCanvas(rect, ctx) {
   if (!rect || !ctx?.canvas) return false;
+  const logicalWidth = ctx.canvas._logicalWidth ?? ctx.canvas.width;
+  const logicalHeight = ctx.canvas._logicalHeight ?? ctx.canvas.height;
   return (
     rect.x === 0 &&
     rect.y === 0 &&
-    rect.width === ctx.canvas.width &&
-    rect.height === ctx.canvas.height
+    rect.width === logicalWidth &&
+    rect.height === logicalHeight
   );
 }

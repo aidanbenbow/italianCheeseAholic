@@ -1,17 +1,36 @@
 // canvasManager.js
 function resizeCanvas(canvas, width, height) {
-  canvas.width = width;
-  canvas.height = height;
+  if (!canvas) return null;
+
+  const dpr = window.devicePixelRatio || 1;
+  const backingWidth = Math.round(width * dpr);
+  const backingHeight = Math.round(height * dpr);
+
+  const sameLogical =
+    canvas._logicalWidth === width &&
+    canvas._logicalHeight === height &&
+    canvas._dpr === dpr;
+
+  if (sameLogical) {
+    return canvas.getContext("2d");
+  }
+
+  canvas._logicalWidth = width;
+  canvas._logicalHeight = height;
+  canvas._dpr = dpr;
+
+  canvas.width = backingWidth;
+  canvas.height = backingHeight;
 
   canvas.style.width = width + "px";
   canvas.style.height = height + "px";
 
   const ctx = canvas.getContext("2d");
+  if (!ctx) return null;
 
-  // IMPORTANT:
-  // We do NOT scale the main scene context because the engine
-  // works in scene coordinates, not device pixels.
-  // Overlay layers *may* scale later if needed.
+  // Scale so draw calls can stay in logical scene units.
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.scale(dpr, dpr);
 
   return ctx;
 }
@@ -20,9 +39,49 @@ export class CanvasManager {
   constructor(config) {
     this.layers = {};
     this.config = config;
+    this._resizeHandler = () => this.resizeAll();
+    this._dprMediaQuery = null;
+    this._dprChangeHandler = () => {
+      this.resizeAll();
+      this._bindDprListener();
+    };
 
     this._initLayers();
-    window.addEventListener("resize", () => this.resizeAll());
+    window.addEventListener("resize", this._resizeHandler);
+    this._bindDprListener();
+  }
+
+  _addMediaQueryChangeListener(mediaQuery, handler) {
+    if (!mediaQuery) return;
+
+    if (typeof mediaQuery.addEventListener === "function") {
+      mediaQuery.addEventListener("change", handler);
+    } else if (typeof mediaQuery.addListener === "function") {
+      mediaQuery.addListener(handler);
+    }
+  }
+
+  _removeMediaQueryChangeListener(mediaQuery, handler) {
+    if (!mediaQuery) return;
+
+    if (typeof mediaQuery.removeEventListener === "function") {
+      mediaQuery.removeEventListener("change", handler);
+    } else if (typeof mediaQuery.removeListener === "function") {
+      mediaQuery.removeListener(handler);
+    }
+  }
+
+  _bindDprListener() {
+    if (this._dprMediaQuery) {
+      this._removeMediaQueryChangeListener(
+        this._dprMediaQuery,
+        this._dprChangeHandler
+      );
+    }
+
+    const dpr = window.devicePixelRatio || 1;
+    this._dprMediaQuery = window.matchMedia(`(resolution: ${dpr}dppx)`);
+    this._addMediaQueryChangeListener(this._dprMediaQuery, this._dprChangeHandler);
   }
 
   // -------------------------------------------------------
@@ -100,8 +159,8 @@ export class CanvasManager {
     if (!canvas) return { width: 0, height: 0 };
 
     return {
-      width: canvas.width,
-      height: canvas.height
+      width: canvas._logicalWidth ?? canvas.width,
+      height: canvas._logicalHeight ?? canvas.height
     };
   }
 
@@ -113,6 +172,18 @@ export class CanvasManager {
       x: canvasX,
       y: canvasY
     };
+  }
+
+  destroy() {
+    window.removeEventListener("resize", this._resizeHandler);
+
+    if (this._dprMediaQuery) {
+      this._removeMediaQueryChangeListener(
+        this._dprMediaQuery,
+        this._dprChangeHandler
+      );
+      this._dprMediaQuery = null;
+    }
   }
 }
 

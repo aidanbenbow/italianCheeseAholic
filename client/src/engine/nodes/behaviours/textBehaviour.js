@@ -21,9 +21,27 @@ export class TextBehavior extends Behavior {
 			+ this.toFinite(style.paddingTop, 0)
 			+ this.toFinite(style.paddingBottom, 0);
 
-		const minWidth = this.toFinite(style.minWidth, 0);
-		const minHeight = this.toFinite(style.minHeight, 0);
-		const preferredWidth = this.toFinite(style.width, intrinsic.width + paddingX);
+		const minWidth = this.resolveDimension(style.minWidth, {
+			axis: "width",
+			constraints,
+			node,
+			style,
+			fallback: 0
+		});
+		const minHeight = this.resolveDimension(style.minHeight, {
+			axis: "height",
+			constraints,
+			node,
+			style,
+			fallback: 0
+		});
+		const preferredWidth = this.resolveDimension(style.width, {
+			axis: "width",
+			constraints,
+			node,
+			style,
+			fallback: intrinsic.width + paddingX
+		});
 
 		const width = this.clamp(preferredWidth, minWidth, maxWidth);
 
@@ -34,7 +52,13 @@ export class TextBehavior extends Behavior {
 			intrinsicHeight = calculateTotalTextHeight(layout, lineGap);
 		}
 
-		const preferredHeight = this.toFinite(style.height, intrinsicHeight + paddingY);
+		const preferredHeight = this.resolveDimension(style.height, {
+			axis: "height",
+			constraints,
+			node,
+			style,
+			fallback: intrinsicHeight + paddingY
+		});
 		const height = this.clamp(preferredHeight, minHeight, maxHeight);
 
 		return {

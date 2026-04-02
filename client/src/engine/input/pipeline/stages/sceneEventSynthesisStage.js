@@ -6,9 +6,11 @@ export class SceneEventSynthesisStage extends InputPipelineStage {
   constructor(options = {}) {
     super(options);
 
-    this.touchScrollMultiplier = 1.6;
-    this.touchScrollFriction = 0.96;
-    this.touchScrollMinVelocity = 0.01;
+    this.touchScrollMultiplier = 1.15;
+    this.touchScrollFriction = 0.94;
+    this.touchScrollMinVelocity = 0.02;
+    this.maxDragDeltaPerFrame = 80;
+    this.maxMomentumDeltaPerFrame = 64;
 
     this.touchState = new Map();
     this.momentumFrame = null;
@@ -38,7 +40,8 @@ export class SceneEventSynthesisStage extends InputPipelineStage {
       };
 
       const scrollTarget = this._findScrollableTarget(event.target) ?? pointerState.scrollTarget;
-      const deltaY = -event.deltaY * this.touchScrollMultiplier;
+      const rawDeltaY = -event.deltaY * this.touchScrollMultiplier;
+      const deltaY = clamp(rawDeltaY, -this.maxDragDeltaPerFrame, this.maxDragDeltaPerFrame);
       const now = performance.now();
       const dt = Math.max(1, now - pointerState.lastTime);
       const velocity = deltaY / dt;
@@ -152,7 +155,11 @@ export class SceneEventSynthesisStage extends InputPipelineStage {
       const dt = Math.max(1, now - lastTime);
       lastTime = now;
 
-      const deltaY = velocity * dt;
+      const deltaY = clamp(
+        velocity * dt,
+        -this.maxMomentumDeltaPerFrame,
+        this.maxMomentumDeltaPerFrame
+      );
 
       if (Math.abs(deltaY) > 0.01) {
         const sceneEvent = new SceneEvent({
@@ -189,4 +196,8 @@ export class SceneEventSynthesisStage extends InputPipelineStage {
     this._cancelMomentum();
     this.touchState.clear();
   }
+}
+
+function clamp(value, min, max) {
+  return Math.min(Math.max(value, min), max);
 }

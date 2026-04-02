@@ -144,9 +144,26 @@ export class SceneNode {
   // --- Layout ---
   measure(constraints, ctx) {
     this.lastMeasureConstraints = constraints;
+    const defaultMeasured = {
+      width: resolveDimension(this.style.width, {
+        axis: "width",
+        constraints,
+        style: this.style,
+        node: this,
+        fallback: 100
+      }),
+      height: resolveDimension(this.style.height, {
+        axis: "height",
+        constraints,
+        style: this.style,
+        node: this,
+        fallback: 30
+      })
+    };
+
     this.measured =
       this.behavior?.measure?.(this, constraints, ctx) ??
-      { width: this.style.width ?? 100, height: this.style.height ?? 30 };
+      defaultMeasured;
 
     return this.measured;
   }
@@ -317,6 +334,10 @@ export class SceneNode {
 const LAYOUT_STYLE_KEYS = new Set([
   "width",
   "height",
+  "minWidth",
+  "maxWidth",
+  "minHeight",
+  "maxHeight",
   "padding",
   "paddingTop",
   "paddingRight",
@@ -365,4 +386,96 @@ function buildNodeLayout(bounds, style = {}) {
 function toFinite(value, fallback) {
   const num = Number(value);
   return Number.isFinite(num) ? num : fallback;
+}
+
+function resolveDimension(value, {
+  axis,
+  constraints,
+  style,
+  node,
+  fallback
+}) {
+  let computed = resolveRawDimension(value, { axis, constraints, style, node });
+
+  if (!Number.isFinite(computed)) {
+    computed = fallback;
+  }
+
+  if (computed < 0) {
+    computed = 0;
+  }
+
+  const minKey = axis === "width" ? "minWidth" : "minHeight";
+  const maxKey = axis === "width" ? "maxWidth" : "maxHeight";
+
+  const min = resolveRawDimension(style?.[minKey], { axis, constraints, style, node });
+  const max = resolveRawDimension(style?.[maxKey], { axis, constraints, style, node });
+
+  if (Number.isFinite(min)) {
+    computed = Math.max(computed, min);
+  }
+
+  if (Number.isFinite(max)) {
+    computed = Math.min(computed, max);
+  }
+
+  return computed;
+}
+
+function resolveRawDimension(value, { axis, constraints, style, node }) {
+  if (typeof value === "function") {
+    return resolveRawDimension(
+      value({ axis, constraints, style, node }),
+      { axis, constraints, style, node }
+    );
+  }
+
+  if (typeof value === "number") {
+    return Number.isFinite(value) ? value : NaN;
+  }
+
+  if (typeof value !== "string") {
+    return NaN;
+  }
+
+  const input = value.trim().toLowerCase();
+  if (!input) return NaN;
+
+  if (input.endsWith("%")) {
+    const percent = Number(input.slice(0, -1));
+    const base = axis === "width"
+      ? Number(constraints?.maxWidth)
+      : Number(constraints?.maxHeight);
+
+    if (!Number.isFinite(percent) || !Number.isFinite(base)) {
+      return NaN;
+    }
+
+    return (base * percent) / 100;
+  }
+
+  if (input.endsWith("vw")) {
+    const percent = Number(input.slice(0, -2));
+    const viewportWidth = Number(constraints?.maxWidth);
+
+    if (!Number.isFinite(percent) || !Number.isFinite(viewportWidth)) {
+      return NaN;
+    }
+
+    return (viewportWidth * percent) / 100;
+  }
+
+  if (input.endsWith("vh")) {
+    const percent = Number(input.slice(0, -2));
+    const viewportHeight = Number(constraints?.maxHeight);
+
+    if (!Number.isFinite(percent) || !Number.isFinite(viewportHeight)) {
+      return NaN;
+    }
+
+    return (viewportHeight * percent) / 100;
+  }
+
+  const numeric = Number(input);
+  return Number.isFinite(numeric) ? numeric : NaN;
 }

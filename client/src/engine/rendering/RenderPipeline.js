@@ -446,8 +446,10 @@ export class RenderPipeline {
        }
     }
     toSceneCoords(canvasX, canvasY) {
-      const scaleX = this.constraints.maxWidth / this.rendererContext.canvas.width;
-      const scaleY = this.constraints.maxHeight / this.rendererContext.canvas.height;
+      const logicalWidth = this.rendererContext.canvas._logicalWidth ?? this.rendererContext.canvas.width;
+      const logicalHeight = this.rendererContext.canvas._logicalHeight ?? this.rendererContext.canvas.height;
+      const scaleX = this.constraints.maxWidth / logicalWidth;
+      const scaleY = this.constraints.maxHeight / logicalHeight;
     
       return {
         x: canvasX * scaleX,
@@ -548,7 +550,8 @@ export class RenderPipeline {
       const panelWidth = 190;
       const panelHeight = 186;
       const margin = 8;
-      const x = Math.max(margin, this.rendererContext.canvas.width - panelWidth - margin);
+      const logicalWidth = this.rendererContext.canvas._logicalWidth ?? this.rendererContext.canvas.width;
+      const x = Math.max(margin, logicalWidth - panelWidth - margin);
       const y = margin;
 
       return { x, y, width: panelWidth, height: panelHeight };
@@ -745,17 +748,21 @@ function unionRects(a, b) {
 
 function getFullCanvasRect(ctx) {
   if (!ctx?.canvas) return null;
+  const logicalWidth = ctx.canvas._logicalWidth ?? ctx.canvas.width;
+  const logicalHeight = ctx.canvas._logicalHeight ?? ctx.canvas.height;
   return {
     x: 0,
     y: 0,
-    width: ctx.canvas.width,
-    height: ctx.canvas.height
+    width: logicalWidth,
+    height: logicalHeight
   };
 }
 
 function rectMatchesCanvas(rect, ctx) {
   if (!rect || !ctx?.canvas) return false;
-  return rect.x === 0 && rect.y === 0 && rect.width === ctx.canvas.width && rect.height === ctx.canvas.height;
+  const logicalWidth = ctx.canvas._logicalWidth ?? ctx.canvas.width;
+  const logicalHeight = ctx.canvas._logicalHeight ?? ctx.canvas.height;
+  return rect.x === 0 && rect.y === 0 && rect.width === logicalWidth && rect.height === logicalHeight;
 }
 
 function now() {

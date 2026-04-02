@@ -55,8 +55,10 @@ export class SceneInputSystem {
   // -------------------------------------------------------
   _getSceneCoords(clientX, clientY) {
     const rect = this.canvas.getBoundingClientRect();
-    const scaleX = this.canvas.width / rect.width;
-    const scaleY = this.canvas.height / rect.height;
+    const logicalWidth = this.canvas._logicalWidth ?? this.canvas.width;
+    const logicalHeight = this.canvas._logicalHeight ?? this.canvas.height;
+    const scaleX = logicalWidth / rect.width;
+    const scaleY = logicalHeight / rect.height;
 
     const canvasX = (clientX - rect.left) * scaleX;
     const canvasY = (clientY - rect.top) * scaleY;
