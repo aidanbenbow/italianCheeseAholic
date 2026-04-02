@@ -11,20 +11,17 @@ export class InputBehavior extends Behavior {
     const text = node.text?.value ?? "";
     const autoGrow = node.autoGrow !== false;
     const lineGap = this.toFinite(style.lineGap, 2);
+    const padding = resolvePadding(style, this.toFinite.bind(this), {
+      left: 10,
+      right: 10,
+      top: 6,
+      bottom: 0
+    });
 
     const { maxWidth, maxHeight } = this.normalizeConstraints(constraints);
+    const paddingX = padding.totalX;
+    const paddingY = padding.totalY;
 
-    const paddingX =
-      this.toFinite(style.paddingLeft, 0) +
-      this.toFinite(style.paddingRight, 0) +
-      this.toFinite(style.paddingX, 0) * 2;
-
-    const paddingY =
-      this.toFinite(style.paddingTop, 0) +
-      this.toFinite(style.paddingBottom, 0) +
-      this.toFinite(style.paddingY, 0) * 2;
-
-    const minWidth = this.toFinite(style.minWidth, 120);
     const minWidthResolved = this.resolveDimension(style.minWidth, {
       axis: "width",
       constraints,
@@ -98,6 +95,34 @@ export class InputBehavior extends Behavior {
     return { width, height };
   }
 
+  layout(node, bounds, ctx) {
+    const style = node.style ?? {};
+    const padding = resolvePadding(style, this.toFinite.bind(this), {
+      left: 10,
+      right: 10,
+      top: 6,
+      bottom: 0
+    });
+
+    const x = bounds?.x ?? 0;
+    const y = bounds?.y ?? 0;
+    const width = bounds?.width ?? 0;
+    const height = bounds?.height ?? 0;
+
+    if (node.layout) {
+      node.layout.contentX = x + padding.left;
+      node.layout.contentY = y + padding.top;
+      node.layout.contentWidth = Math.max(0, width - padding.totalX);
+      node.layout.contentHeight = Math.max(0, height - padding.totalY);
+      node.layout.padding = {
+        left: padding.left,
+        right: padding.right,
+        top: padding.top,
+        bottom: padding.bottom
+      };
+    }
+  }
+
   render(node, ctx) {
     const layout = node.layout ?? node.bounds;
     const style = node.style ?? {};
@@ -108,7 +133,12 @@ export class InputBehavior extends Behavior {
       defaultBackground: "#111827",
       alwaysFill: true
     });
+    const resolvedBorderWidth = focused
+      ? this.toFinite(style.focusBorderWidth, this.toFinite(style.borderWidth, 1))
+      : this.toFinite(style.borderWidth, 1);
+
     renderBoxBorder(ctx, layout, style, {
+      borderWidth: resolvedBorderWidth,
       borderColor: focused
         ? (style.focusBorderColor ?? "#60A5FA")
         : (style.borderColor ?? "#374151")
@@ -118,7 +148,6 @@ export class InputBehavior extends Behavior {
     const valueText = String(node.text?.value ?? "");
     const placeholderText = String(node.text?.placeholder ?? "");
     const isPlaceholder = valueText.length === 0;
-    const renderText = isPlaceholder ? placeholderText : valueText;
 
     ctx.font = node.text?.font ?? style.font ?? "14px sans-serif";
     ctx.textBaseline = "top";
@@ -127,7 +156,12 @@ export class InputBehavior extends Behavior {
       ? (style.placeholderColor ?? "#6B7280")
       : (style.color ?? "#F9FAFB");
 
-    const padding = resolvePadding(style, this.toFinite.bind(this), { left: 10 });
+    const padding = resolvePadding(style, this.toFinite.bind(this), {
+      left: 10,
+      right: 10,
+      top: 6,
+      bottom: 0
+    });
     const content = resolveContentRect(layout, node.layout, padding);
 
     const textLayout = TextLayoutEngine.getLayout({

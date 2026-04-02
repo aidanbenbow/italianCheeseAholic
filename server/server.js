@@ -25,6 +25,7 @@ const { buildContainer } = await import("./src/bootstrap/buildContainer.js");
 
 const app = express();
 const server = http.createServer(app);
+const isProduction = process.env.NODE_ENV === "production";
 
 const container = buildContainer();
 
@@ -39,6 +40,11 @@ const io = new Server(server, {
 // Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+if (isProduction) {
+  app.set("trust proxy", 1);
+}
+
 app.use(session({
   name: "italiancheeseaholic.sid",
   secret: process.env.SESSION_SECRET || "change-this-session-secret",
@@ -47,7 +53,7 @@ app.use(session({
   cookie: {
     httpOnly: true,
     sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
+    secure: "auto",
     maxAge: 1000 * 60 * 60 * 8,
   },
 }));

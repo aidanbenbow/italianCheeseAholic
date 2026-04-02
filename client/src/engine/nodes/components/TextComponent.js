@@ -1,4 +1,5 @@
 import { Component } from "./component.js";
+import { TextLayoutEngine } from "../../modules/text/layout/TextLayoutEngine.js";
 
 export class TextComponent extends Component {
   constructor(node, { value = "", placeholder = "", font = "14px sans-serif" } = {}) {
@@ -23,6 +24,7 @@ export class TextComponent extends Component {
     if (normalized === this.value) return;
 
     this.value = normalized;
+    TextLayoutEngine.invalidate(this);
     this.node?.requestLayout?.();
   }
 
@@ -35,6 +37,7 @@ export class TextComponent extends Component {
     if (normalized === this.placeholder) return;
 
     this.placeholder = normalized;
+    TextLayoutEngine.invalidate(this);
     this.node?.requestLayout?.();
   }
 
@@ -47,6 +50,7 @@ export class TextComponent extends Component {
     if (normalized === this.font) return;
 
     this.font = normalized;
+    TextLayoutEngine.invalidate(this);
     this.node?.requestLayout?.();
   }
 

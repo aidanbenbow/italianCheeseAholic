@@ -27,9 +27,10 @@ export class TextLayoutEngine {
       lineHeightMode: normalizedMode
     });
 
-    const cachedLayout = cacheTarget?.__textLayoutCache;
-    if (cachedLayout?.key === cacheKey && cachedLayout.layout) {
-      return cachedLayout.layout;
+    if (cacheTarget) {
+      const cache = this._getCache(cacheTarget);
+      const hit = cache.get(cacheKey);
+      if (hit) return hit;
     }
 
     const baseLayout = TextLayoutCalculator.calculateLayout(
@@ -41,28 +42,47 @@ export class TextLayoutEngine {
 
     const rawLineHeight = Number(baseLayout?.lineHeight) || 0;
     const lineAdvance = rawLineHeight + normalizedGap;
-    const lineCount = baseLayout?.lines?.length ?? 0;
-    const totalHeight = lineCount <= 0
-      ? 0
-      : (rawLineHeight * lineCount) + (normalizedGap * Math.max(0, lineCount - 1));
 
     const layout = new TextLayout({
       ...baseLayout,
       rawLineHeight,
       lineGap: normalizedGap,
       lineAdvance,
-      lineHeight: normalizedMode === "advance" ? lineAdvance : rawLineHeight,
-      totalHeight
+      lineHeight: normalizedMode === "advance" ? lineAdvance : rawLineHeight
     });
 
     if (cacheTarget) {
-      cacheTarget.__textLayoutCache = {
-        key: cacheKey,
-        layout
-      };
+      this._setCached(cacheTarget, cacheKey, layout);
     }
 
     return layout;
+  }
+
+  /**
+   * Invalidate all cached layouts on a target (call when text/style changes).
+   * @param {object} cacheTarget
+   */
+  static invalidate(cacheTarget) {
+    if (cacheTarget?.__textLayoutCache instanceof Map) {
+      cacheTarget.__textLayoutCache.clear();
+    }
+  }
+
+  /** @private */
+  static _getCache(cacheTarget) {
+    if (!(cacheTarget.__textLayoutCache instanceof Map)) {
+      cacheTarget.__textLayoutCache = new Map();
+    }
+    return cacheTarget.__textLayoutCache;
+  }
+
+  /** @private — evict oldest entry when cap is exceeded */
+  static _setCached(cacheTarget, key, layout) {
+    const cache = this._getCache(cacheTarget);
+    if (!cache.has(key) && cache.size >= 32) {
+      cache.delete(cache.keys().next().value);
+    }
+    cache.set(key, layout);
   }
 
   static _createCacheKey({ text, font, maxWidth, lineGap, lineHeightMode }) {

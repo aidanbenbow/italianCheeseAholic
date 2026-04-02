@@ -14,7 +14,7 @@ export function renderBoxBackground(ctx, bounds, style, options = {}) {
 }
 
 export function renderBoxBorder(ctx, bounds, style, options = {}) {
-  const borderWidth = style?.borderWidth ?? 0;
+  const borderWidth = options.borderWidth ?? style?.borderWidth ?? 0;
   const borderColor = options.borderColor ?? style?.borderColor;
 
   if (!borderColor || borderWidth <= 0) {

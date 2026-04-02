@@ -6,8 +6,12 @@ export class TextLayout {
     this.lineGap = Number(data.lineGap ?? 0) || 0;
     this.lineAdvance = Number(data.lineAdvance ?? (this.rawLineHeight + this.lineGap)) || 0;
     this.lineHeight = Number(data.lineHeight ?? this.rawLineHeight) || 0;
-    this.totalHeight = Number(data.totalHeight ?? 0) || 0;
     this.maxLineWidth = Number(data.maxLineWidth ?? 0) || 0;
+
+    const lineCount = this.lines.length;
+    this.totalHeight = lineCount <= 0
+      ? 0
+      : (this.rawLineHeight * lineCount) + (this.lineGap * Math.max(0, lineCount - 1));
   }
 
   getLineForIndex(index) {

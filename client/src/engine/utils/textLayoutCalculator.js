@@ -16,7 +16,6 @@ export class TextLayoutCalculator {
         font: String(font ?? "14px sans-serif"),
         lines: [],
         lineHeight: 20,
-        totalHeight: 0,
         maxLineWidth: 0
       };
     }
@@ -50,6 +49,7 @@ export class TextLayoutCalculator {
           startIndex: charIndex,
           endIndex: charIndex + line.text.length,
           width: line.width,
+          charWidths: Array.isArray(line.charWidths) ? line.charWidths : [],
           ascent,
           descent
         });
@@ -69,7 +69,8 @@ export class TextLayoutCalculator {
         text: "",
         startIndex: 0,
         endIndex: 0,
-        width: 0
+        width: 0,
+        charWidths: []
       });
     }
 
@@ -77,7 +78,6 @@ export class TextLayoutCalculator {
       font: String(font ?? "14px sans-serif"),
       lines,
       lineHeight,
-      totalHeight: lines.length * lineHeight,
       maxLineWidth: lines.reduce((max, line) => Math.max(max, line.width ?? 0), 0)
     };
   }
@@ -97,37 +97,144 @@ export class TextLayoutCalculator {
     }
 
     const lines = [];
+    const tokens = text.split(/(\s+)/).filter(Boolean);
     let currentLine = "";
     let currentCharWidths = [];
+    let currentWidth = 0;
 
-    for (const char of text) {
-      const testLine = currentLine + char;
-      const testWidth = ctx.measureText(testLine).width;
-      const charWidth = ctx.measureText(char).width;
+    const flushCurrent = () => {
+      if (currentLine.length <= 0) return;
+      const displayWidth = this._computeDisplayWidthWithoutTrailingWhitespace(
+        currentLine,
+        currentCharWidths,
+        currentWidth
+      );
+      lines.push({
+        text: currentLine,
+        width: displayWidth,
+        charWidths: currentCharWidths
+      });
+      currentLine = "";
+      currentCharWidths = [];
+      currentWidth = 0;
+    };
 
-      if (testWidth > maxWidth && currentLine.length > 0) {
-        lines.push({
-          text: currentLine,
-          width: ctx.measureText(currentLine).width,
-          charWidths: currentCharWidths
-        });
-        currentLine = char;
-        currentCharWidths = [charWidth];
-      } else {
-        currentLine = testLine;
-        currentCharWidths.push(charWidth);
+    for (const token of tokens) {
+      const measuredToken = this._measureToken(token, ctx);
+      const nextWidth = currentWidth + measuredToken.width;
+
+      if (nextWidth <= maxWidth) {
+        currentLine += measuredToken.text;
+        currentCharWidths.push(...measuredToken.charWidths);
+        currentWidth = nextWidth;
+        continue;
+      }
+
+      if (currentLine.length > 0) {
+        flushCurrent();
+      }
+
+      if (measuredToken.width <= maxWidth || measuredToken.text.length <= 1) {
+        currentLine = measuredToken.text;
+        currentCharWidths = measuredToken.charWidths;
+        currentWidth = measuredToken.width;
+        continue;
+      }
+
+      const tokenLines = this._splitMeasuredTokenByChars(measuredToken, maxWidth);
+      for (let i = 0; i < tokenLines.length; i++) {
+        const tokenLine = tokenLines[i];
+        const isLast = i === tokenLines.length - 1;
+
+        if (isLast) {
+          currentLine = tokenLine.text;
+          currentCharWidths = tokenLine.charWidths;
+          currentWidth = tokenLine.width;
+        } else {
+          lines.push(tokenLine);
+        }
       }
     }
 
-    if (currentLine.length > 0) {
+    flushCurrent();
+
+    return lines;
+  }
+
+  static _measureToken(text, ctx) {
+    const charWidths = [];
+    let width = 0;
+
+    for (const char of text) {
+      const charWidth = ctx.measureText(char).width;
+      charWidths.push(charWidth);
+      width += charWidth;
+    }
+
+    return {
+      text,
+      width,
+      charWidths
+    };
+  }
+
+  static _splitMeasuredTokenByChars(measuredToken, maxWidth) {
+    const lines = [];
+    let currentText = "";
+    let currentCharWidths = [];
+    let currentWidth = 0;
+
+    for (let i = 0; i < measuredToken.text.length; i++) {
+      const char = measuredToken.text[i];
+      const charWidth = measuredToken.charWidths[i] ?? 0;
+
+      if ((currentWidth + charWidth) > maxWidth && currentText.length > 0) {
+        lines.push({
+          text: currentText,
+          width: this._computeDisplayWidthWithoutTrailingWhitespace(
+            currentText,
+            currentCharWidths,
+            currentWidth
+          ),
+          charWidths: currentCharWidths
+        });
+        currentText = "";
+        currentCharWidths = [];
+        currentWidth = 0;
+      }
+
+      currentText += char;
+      currentCharWidths.push(charWidth);
+      currentWidth += charWidth;
+    }
+
+    if (currentText.length > 0) {
       lines.push({
-        text: currentLine,
-        width: ctx.measureText(currentLine).width,
+        text: currentText,
+        width: this._computeDisplayWidthWithoutTrailingWhitespace(
+          currentText,
+          currentCharWidths,
+          currentWidth
+        ),
         charWidths: currentCharWidths
       });
     }
 
     return lines;
+  }
+
+  static _computeDisplayWidthWithoutTrailingWhitespace(text, charWidths, measuredWidth) {
+    let displayWidth = measuredWidth;
+
+    for (let index = text.length - 1; index >= 0; index--) {
+      if (!/\s/.test(text[index])) {
+        break;
+      }
+
+      displayWidth -= charWidths[index] ?? 0;
+    }
+
+    return Math.max(0, displayWidth);
   }
 
   /**
