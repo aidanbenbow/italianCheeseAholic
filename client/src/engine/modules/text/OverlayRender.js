@@ -89,7 +89,7 @@ export class OverlayRenderer {
 
     const caretPos = caret.index;
 
-    const { x: caretX, y: caretY } = TextLayoutBridge.indexToPosition(node, caretPos, ctx);
+    const { x: caretX, y: caretY } = TextLayoutBridge.indexToPosition(node, caretPos);
 
     ctx.beginPath();
     ctx.moveTo(caretX, caretY);

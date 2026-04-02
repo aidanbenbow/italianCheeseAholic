@@ -32,11 +32,7 @@ export class CaretController {
   // Caret → scene coordinates
   // -------------------------------------------------------
 
-  getScenePosition(ctx) {
-    return TextLayoutBridge.indexToPosition(
-      this.system.activeNode,
-      this.index,
-      ctx
-    );
+  getScenePosition() {
+    return TextLayoutBridge.indexToPosition(this.system.activeNode, this.index);
   }
 }

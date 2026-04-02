@@ -24,10 +24,6 @@ export class PointerSelectionController {
     return this.system.engine.context.canvasManager?.getCanvas?.("main") ?? null;
   }
 
-  _getCtx() {
-    return this.system.engine.context.canvasManager?.getContext?.("main") ?? null;
-  }
-
   mount() {
     const canvas = this._getCanvas();
     if (!canvas) return;
@@ -71,12 +67,9 @@ export class PointerSelectionController {
       return;
     }
 
-    const ctx = this._getCtx();
-    if (!ctx) return;
-
     const { x, y } = this.getSceneCoords(e);
 
-    const index = getCaretIndexFromMousePosition(node, x, y, ctx);
+    const index = getCaretIndexFromMousePosition(node, x, y);
 
     // Begin selection
     this.system.caret.setIndex(index);
@@ -92,12 +85,9 @@ export class PointerSelectionController {
     const node = this.system.activeNode;
     if (!node) return;
 
-    const ctx = this._getCtx();
-    if (!ctx) return;
-
     const { x, y } = this.getSceneCoords(e);
 
-    const index = getCaretIndexFromMousePosition(node, x, y, ctx);
+    const index = getCaretIndexFromMousePosition(node, x, y);
 
     // Extend selection
     this.system.selection.extendTo(index);

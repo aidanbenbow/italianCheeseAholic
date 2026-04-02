@@ -88,38 +88,42 @@ export class TextLayoutCalculator {
    */
   static _wrapText(text, ctx, maxWidth) {
     if (text.length === 0) {
-      return [{ text: "", width: 0 }];
+      return [{ text: "", width: 0, charWidths: [] }];
     }
 
     if (maxWidth === Infinity) {
-      // No wrapping needed
-      return [{ text, width: ctx.measureText(text).width }];
+      const charWidths = [...text].map(c => ctx.measureText(c).width);
+      return [{ text, width: ctx.measureText(text).width, charWidths }];
     }
 
     const lines = [];
     let currentLine = "";
+    let currentCharWidths = [];
 
     for (const char of text) {
       const testLine = currentLine + char;
       const testWidth = ctx.measureText(testLine).width;
+      const charWidth = ctx.measureText(char).width;
 
       if (testWidth > maxWidth && currentLine.length > 0) {
-        // Current line is full, push it
         lines.push({
           text: currentLine,
-          width: ctx.measureText(currentLine).width
+          width: ctx.measureText(currentLine).width,
+          charWidths: currentCharWidths
         });
         currentLine = char;
+        currentCharWidths = [charWidth];
       } else {
         currentLine = testLine;
+        currentCharWidths.push(charWidth);
       }
     }
 
-    // Push remaining text
     if (currentLine.length > 0) {
       lines.push({
         text: currentLine,
-        width: ctx.measureText(currentLine).width
+        width: ctx.measureText(currentLine).width,
+        charWidths: currentCharWidths
       });
     }
 

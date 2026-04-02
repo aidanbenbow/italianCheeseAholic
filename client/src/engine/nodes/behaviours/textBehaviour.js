@@ -1,7 +1,7 @@
 import { Behavior } from "./Behaviour.js";
 import { measureIntrinsicText, resolveContentRect, resolvePadding } from "./textBoxHelpers.js";
 import { renderBoxBackground, renderBoxBorder } from "./boxRenderHelpers.js";
-import { TextLayoutCalculator } from "../../utils/textLayoutCalculator.js";
+import { TextLayoutEngine } from "../../modules/text/layout/TextLayoutEngine.js";
 
 export class TextBehavior extends Behavior {
 	measure(node, constraints, ctx) {
@@ -48,8 +48,15 @@ export class TextBehavior extends Behavior {
 		let intrinsicHeight = intrinsic.height;
 		if (wrap) {
 			const contentWidth = Math.max(0, width - paddingX);
-			const layout = TextLayoutCalculator.calculateLayout(text, ctx, contentWidth, font);
-			intrinsicHeight = calculateTotalTextHeight(layout, lineGap);
+			const layout = TextLayoutEngine.getLayout({
+				cacheTarget: node,
+				text,
+				ctx,
+				maxWidth: contentWidth,
+				font,
+				lineGap
+			});
+			intrinsicHeight = layout.totalHeight;
 		}
 
 		const preferredHeight = this.resolveDimension(style.height, {
@@ -93,12 +100,14 @@ export class TextBehavior extends Behavior {
 			return;
 		}
 
-		const layout = TextLayoutCalculator.calculateLayout(
-			String(node.text ?? ""),
+		const layout = TextLayoutEngine.getLayout({
+			cacheTarget: node,
+			text: String(node.text ?? ""),
 			ctx,
-			content.contentWidth,
-			ctx.font
-		);
+			maxWidth: content.contentWidth,
+			font: ctx.font,
+			lineGap
+		});
 
 		ctx.save();
 		ctx.beginPath();
@@ -107,21 +116,12 @@ export class TextBehavior extends Behavior {
 
 		for (let index = 0; index < layout.lines.length; index++) {
 			const line = layout.lines[index];
-			const lineY = content.contentY + index * (layout.lineHeight + lineGap);
+			const lineY = content.contentY + index * layout.lineAdvance;
 			ctx.fillText(line.text, content.contentX, lineY);
 		}
 
 		ctx.restore();
 	}
-}
-
-function calculateTotalTextHeight(layout, lineGap) {
-	const lineCount = layout?.lines?.length ?? 0;
-	if (lineCount <= 0) {
-		return 0;
-	}
-
-	return (layout.lineHeight * lineCount) + (lineGap * Math.max(0, lineCount - 1));
 }
 
 function resolveTextX(x, width, align = "left") {

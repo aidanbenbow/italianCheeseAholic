@@ -8,6 +8,6 @@ import { TextLayoutBridge } from "./TextLayoutBridge.js";
  * Thin wrapper around TextLayoutBridge.positionToIndex kept for backward
  * compatibility with PointerSelectionController's import path.
  */
-export function getCaretIndexFromMousePosition(node, sceneX, sceneY, ctx) {
-  return TextLayoutBridge.positionToIndex(node, sceneX, sceneY, ctx);
+export function getCaretIndexFromMousePosition(node, sceneX, sceneY) {
+  return TextLayoutBridge.positionToIndex(node, sceneX, sceneY);
 }

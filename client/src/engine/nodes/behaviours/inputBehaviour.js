@@ -1,9 +1,9 @@
 // /scene/behaviours/InputBehavior.js
 
 import { Behavior } from "./Behaviour.js";
-import { TextLayoutCalculator } from "../../utils/textLayoutCalculator.js";
 import { resolveContentRect, resolvePadding } from "./textBoxHelpers.js";
 import { renderBoxBackground, renderBoxBorder } from "./boxRenderHelpers.js";
+import { TextLayoutEngine } from "../../modules/text/layout/TextLayoutEngine.js";
 export class InputBehavior extends Behavior {
   measure(node, constraints, ctx) {
     const style = node.style ?? {};
@@ -54,8 +54,16 @@ export class InputBehavior extends Behavior {
     );
 
     const contentWidth = Math.max(0, width - paddingX);
-    const intrinsicLayout = TextLayoutCalculator.calculateLayout(text, ctx, contentWidth, font);
-    const totalTextHeight = calculateTotalTextHeight(intrinsicLayout, lineGap);
+    const intrinsicLayout = TextLayoutEngine.getLayout({
+      cacheTarget: node.text,
+      text,
+      ctx,
+      maxWidth: contentWidth,
+      font,
+      lineGap,
+      lineHeightMode: "advance"
+    });
+    const totalTextHeight = intrinsicLayout.totalHeight;
 
     const minHeight = this.resolveDimension(style.minHeight, {
       axis: "height",
@@ -77,7 +85,7 @@ export class InputBehavior extends Behavior {
       style,
       fallback: minHeight
     });
-    const contentHeight = Math.max(baseHeight - paddingY, intrinsicLayout.lineHeight);
+    const contentHeight = Math.max(baseHeight - paddingY, intrinsicLayout.rawLineHeight);
     const dynamicHeight = totalTextHeight + paddingY;
     const heightMax = Number.isFinite(maxHeightStyle) ? Math.min(maxHeight, maxHeightStyle) : maxHeight;
 
@@ -122,12 +130,27 @@ export class InputBehavior extends Behavior {
     const padding = resolvePadding(style, this.toFinite.bind(this), { left: 10 });
     const content = resolveContentRect(layout, node.layout, padding);
 
-    const renderLayout = TextLayoutCalculator.calculateLayout(
-      renderText,
+    const textLayout = TextLayoutEngine.getLayout({
+      cacheTarget: node.text,
+      text: node.text?.value ?? "",
       ctx,
-      content.contentWidth,
-      ctx.font
-    );
+      maxWidth: content.contentWidth,
+      font: ctx.font,
+      lineGap,
+      lineHeightMode: "advance"
+    });
+
+    const renderLayout = isPlaceholder
+      ? TextLayoutEngine.getLayout({
+        cacheTarget: node.text,
+        text: placeholderText,
+        ctx,
+        maxWidth: content.contentWidth,
+        font: ctx.font,
+        lineGap,
+        lineHeightMode: "advance"
+      })
+      : textLayout;
 
     ctx.save();
     ctx.beginPath();
@@ -136,7 +159,7 @@ export class InputBehavior extends Behavior {
 
     for (let index = 0; index < renderLayout.lines.length; index++) {
       const line = renderLayout.lines[index];
-      const lineY = content.contentY + index * (renderLayout.lineHeight + lineGap);
+      const lineY = content.contentY + index * renderLayout.lineAdvance;
       ctx.fillText(line.text, content.contentX, lineY);
     }
 
@@ -145,23 +168,7 @@ export class InputBehavior extends Behavior {
     // -------------------------------------------------------
     // Calculate and store detailed text layout for overlay renderer
     // -------------------------------------------------------
-    const font = node.text?.font ?? style.font ?? "14px sans-serif";
-    const textContentWidth = content.contentWidth;
-
-    const textLayout = TextLayoutCalculator.calculateLayout(
-      node.text?.value ?? "",
-      ctx,
-      textContentWidth,
-      font
-    );
-
-    const adjustedTextLayout = {
-      ...textLayout,
-      lineHeight: textLayout.lineHeight + lineGap,
-      totalHeight: calculateTotalTextHeight(textLayout, lineGap)
-    };
-
-    node.text?.setLayout?.(adjustedTextLayout);
+    node.text?.setLayout?.(textLayout);
   }
 
   onEvent(node, event) {
@@ -174,17 +181,4 @@ export class InputBehavior extends Behavior {
 
     return false;
   }
-}
-
-// -------------------------------------------------------
-// Utilities
-// -------------------------------------------------------
-
-function calculateTotalTextHeight(layout, lineGap) {
-  const lineCount = layout?.lines?.length ?? 0;
-  if (lineCount <= 0) {
-    return 0;
-  }
-
-  return (layout.lineHeight * lineCount) + (lineGap * Math.max(0, lineCount - 1));
 }
