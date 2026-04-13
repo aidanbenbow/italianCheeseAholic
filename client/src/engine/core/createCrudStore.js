@@ -64,6 +64,23 @@ export function createCrudStore({
     }
   }
 
+async function loadOne(id) {
+    store.set({ isLoading: true, error: null });
+    try {
+      const response = await fetch(`forms/${id}`);
+      const payload = await response.json();
+      if (!response.ok || !payload?.ok) {
+        throw new Error(payload?.error ?? "Failed to load");
+      }
+        store.set({ isLoading: false, currentItem: payload.data });
+      return payload.data;
+    } catch (error) {
+      store.set({ isLoading: false, error: error?.message ?? "Load failed" });
+      onLoadError?.(error);
+      return null;
+    }
+  }
+
   async function save(itemPayload) {
     store.set({ isSaving: true, error: null });
 
@@ -96,6 +113,7 @@ export function createCrudStore({
     update: store.update,
     snapshot: store.snapshot,
     load,
+    loadOne,
     save,
   };
 }

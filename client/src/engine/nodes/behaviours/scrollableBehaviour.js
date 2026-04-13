@@ -128,16 +128,18 @@ export class ScrollableBehavior extends Behavior {
       maxHeight: Infinity
     };
 
-    let currentY = bounds.y;
+    let currentY = bounds.y + (node.style?.paddingTop ?? 10);
     const childCount = node.children.length;
 
     for (let i = 0; i < childCount; i++) {
       const child   = node.children[i];
       const measured = child.measure(childConstraints, ctx);
+       // 👇 NEW: horizontal centering
+  const childX = bounds.x + (bounds.width - measured.width) / 2;
 
       child.applyLayout(
         {
-          x:      bounds.x,
+          x:      childX,
           y:      currentY,
           width:  measured.width,
           height: measured.height

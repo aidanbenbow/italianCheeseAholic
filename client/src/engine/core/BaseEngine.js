@@ -110,4 +110,20 @@ export class BaseEngine {
     this.eventListeners.clear();
     this.isMounted = false;
   }
+
+  addModule(module, lifecycle = true) {
+    if (!module) return;
+    this.modules.push(module);
+
+    if (lifecycle) {
+      this.lifecycleModules.push(module);
+    }
+
+    if (this.isMounted && lifecycle) {
+      this.attachModules([module]);
+    }
+
+    this.registerModule(module);
+
+  }
 }

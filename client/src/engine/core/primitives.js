@@ -74,6 +74,10 @@ export function createButtonNode(options = {}) {
   });
 
   node.label = options.label ?? "Button";
+
+  node.command = options.command ?? null;
+  node.commandArgs = options.commandArgs ?? null;
+
   node.state = {
     hovered: false,
     pressed: false,
@@ -108,9 +112,19 @@ export function createButtonNode(options = {}) {
       const shouldTrigger = node.state.pressed;
       node.state.pressed = false;
       node.requestRender();
-      if (shouldTrigger && typeof options.onPress === "function") {
+      if (shouldTrigger) {
+         if (node.command) {
+          const args = typeof node.commandArgs === "function"
+            ? node.commandArgs(node)
+            : node.commandArgs;
+          node.context.engine.commands.execute(
+            node.command,
+            args
+          );
+        } else if(typeof options.onPress === "function") {
         options.onPress(node);
       }
+    }
       return false;
     }
 

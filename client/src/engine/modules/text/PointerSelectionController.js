@@ -103,13 +103,13 @@ export class PointerSelectionController {
 
     // If selection exists, let SelectionMenu decide what to do
     if (this.system.selection.hasRange()) {
-      this.system.menu.showForSelection();
+      // this.system.menu.showForSelection();
     } else {
       const activeNode = this.system.activeNode;
       if (activeNode?.type === "input") {
-        this.system.menu.showForInputNode(activeNode);
+       // this.system.menu.showForInputNode(activeNode);
       } else {
-        this.system.menu.hide();
+        // this.system.menu.hide();
       }
     }
 

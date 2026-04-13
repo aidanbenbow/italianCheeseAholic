@@ -47,7 +47,7 @@ export class LauncherModule extends BaseModule {
       return;
     }
 
-    const firstApp = apps[0];
+    const firstApp = apps[2];
     return this.launchApp(firstApp);
   }
 

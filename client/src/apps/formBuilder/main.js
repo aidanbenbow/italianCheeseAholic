@@ -1,15 +1,23 @@
-export function mount(engine) {
-  const uiText = engine.ui.signal("Hello, Form Builder!");
-  const titleNode = engine.ui.createTextNode({id:"Form Builder",style: {
-    x: 20,
-    y: 20,
-    width: 260,
-    height: 36,
-    background: "#0F172A",
-    color: "#b2abab",
-    font: "14px sans-serif",
-    paddingLeft: 50
-  }});
-  engine.ui.mountNode(titleNode);
-  engine.ui.bindText(titleNode, uiText);
+import { createPageSwitcher } from "./layout/pageSwitcher.js";
+import { AppCommandsModule } from "./modules/appCommandModule.js";
+import { createFormBuilderCrudStore } from "./state/crudStore.js";
+import { createViewFormPage } from "./ui/pages/viewForm.js";
+
+let commansdModule = null;
+
+
+export async function mount(engine) {
+commansdModule = new AppCommandsModule(engine);
+engine.addModule(commansdModule);
+
+const crud = createFormBuilderCrudStore(engine);
+const pageSwitcher = createPageSwitcher(engine);
+
+const form = await crud.loadOne("form_1");
+console.log("Loaded form:", form);
+
+const viewFormPage = createViewFormPage(engine, "12345");
+pageSwitcher.show(viewFormPage);
 }
+
+

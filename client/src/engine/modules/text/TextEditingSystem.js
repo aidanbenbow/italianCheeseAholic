@@ -26,7 +26,7 @@ export class TextEditingSystem {
     this.pointer = new PointerSelectionController(this);
     this.clipboard = new ClipboardController(this);
     this.overlay = new OverlayRenderer(this);
-    this.menu = new SelectionMenu(this);
+    //this.menu = new SelectionMenu(this);
     this.pastePrompt = new PastePrompt(this);
   }
 
@@ -43,7 +43,7 @@ export class TextEditingSystem {
     this.keyboard.mount();
     this.pointer.mount();
     this.clipboard.mount();
-    this.menu.mount();
+   // this.menu.mount();
     this.pastePrompt.mount();
 
     this._offFocusChanged = this.engine.on("focus:changed", () => {
@@ -91,7 +91,7 @@ export class TextEditingSystem {
     if (this.activeNode === node) {
       this.syncFromNode();
       this.keyboard.enable();
-      this.menu.showForInputNode(node);
+     // this.menu.showForInputNode(node);
       return;
     }
 
@@ -110,7 +110,7 @@ export class TextEditingSystem {
 
     // Enable keyboard
     this.keyboard.enable();
-    this.menu.showForInputNode(node);
+    //this.menu.showForInputNode(node);
 
     // Invalidate render
     this.invalidate();

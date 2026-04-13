@@ -60,8 +60,8 @@ app.use(session({
 
 // Register backend modules
 registerAuth(container, io, app);
-registerFormBuilder(container, io);
-registerDorcas(container, io);
+registerFormBuilder(container, io, app);
+registerDorcas(container, io, app);
 registerBlog(container, io, app);
 
 // Serve static frontend (after API routes)
