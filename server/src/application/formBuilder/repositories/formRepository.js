@@ -8,7 +8,7 @@ import {
 export class FormRepository {
   constructor(docClient) {
     this.docClient = docClient;
-    this.tableName = "forms_app";
+    this.tableName = "form_app";
   }
 
   // ========================

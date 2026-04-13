@@ -61,6 +61,17 @@ export function renderForm(engine, form) {
       inputs[field.id] = node;
     }
 
+    if (field.type === "textarea") {
+      node = engine.ui.createInputNode({
+        id: field.id,
+        placeholder: field.placeholder || "",
+        style: theme.input || {},
+        multiline: true,
+        autoGrow: true
+      });
+        inputs[field.id] = node;
+    }
+
     if (node) {
       engine.ui.mountNode(node, page);
     }
@@ -73,7 +84,7 @@ export function renderForm(engine, form) {
     id: `${form.formId}-submit`,
     label: "Submit",
     style: theme.button || {},
-    command: "form:submit",
+    command: "form:save",
 
     commandArgs: () => {
       const values = {};

@@ -12,7 +12,7 @@ export function registerBackend(container, io, app) {
   container.singleton("formService", (c) =>
     new FormService(c.resolve("formRepository"))
   );
-
+console.log(app, container);
   registerFormHandlers(io, container);
   registerFormRoutes(app, container);
 }

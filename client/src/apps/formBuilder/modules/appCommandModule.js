@@ -2,15 +2,34 @@ import { BaseModule } from "../../../engine/modules/BaseModule.js";
 
 export class AppCommandsModule extends BaseModule {
   attach() {
-    this.engine.commands.register("form:Save", this.saveForm);
+    this.engine.commands.register("form:save", this.saveForm);
   }
 
   detach() {
-    this.engine.commands.unregister("form:Save");
+    this.engine.commands.unregister("form:save");
   }
 
-  saveForm=(formData) => {
-    console.log("Saving form data:", formData);
-    // Here you would typically send the formData to your backend or save it in your state management system
+ saveForm = async (formData) => {
+  try {
+    const res = await fetch(`/forms/${formData.formId}/submissions`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(formData.answers)
+    });
+
+    const payload = await res.json();
+
+    if (!res.ok || !payload?.ok) {
+      throw new Error(payload?.error || "Failed to submit");
+    }
+
+    this.engine.systemUI.toastLayer.show("Form submitted ✅");
+
+  } catch (err) {
+    console.error(err);
+    this.engine.systemUI.toastLayer.show("Submit failed ❌");
   }
+};
 }
