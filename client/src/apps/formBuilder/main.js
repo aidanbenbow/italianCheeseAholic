@@ -1,5 +1,6 @@
 import { createPageSwitcher } from "./layout/pageSwitcher.js";
 import { AppCommandsModule } from "./modules/appCommandModule.js";
+import { createResultsPage } from "./render/createResultsPage.js";
 import { renderForm } from "./render/formRenderer.js";
 import { createFormBuilderCrudStore } from "./state/crudStore.js";
 import { createViewFormPage } from "./ui/pages/viewForm.js";
@@ -19,9 +20,14 @@ console.log("Loaded form:", form);
 
 const viewForm = renderForm(engine, form);
 
+//load submissions for form
+const submissions = form.results || [];
+
+const resultsPage = createResultsPage(engine, form, submissions);
+
 pageSwitcher.show(viewForm);
-//const viewFormPage = createViewFormPage(engine, "12345");
-//pageSwitcher.show(viewFormPage);
+//pageSwitcher.show(resultsPage);
+
 }
 
 

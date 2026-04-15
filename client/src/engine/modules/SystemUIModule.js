@@ -24,6 +24,7 @@ export class SystemUIModule extends BaseModule {
   constructor(engine) {
     super(engine);
     this.root = null;
+    this._offFocusChanged = null;
     
     // System UI sub-modules
     this.popupLayer = null;
@@ -96,9 +97,18 @@ export class SystemUIModule extends BaseModule {
     }
 
     console.log("SystemUIModule attached", this.root);
+
+    this._offFocusChanged = this.engine.on("focus:changed", () => {
+      this._syncKeyboardVisibility();
+    });
+
+    this._syncKeyboardVisibility();
   }
 
   detach() {
+    this._offFocusChanged?.();
+    this._offFocusChanged = null;
+
     // Stop system pipeline
     const systemPipeline = this.engine.renderer?.getPipeline("system");
     if (systemPipeline) {
@@ -123,5 +133,21 @@ export class SystemUIModule extends BaseModule {
       toasts: this.toastLayer,
       dropdowns: this.dropDownLayer
     };
+  }
+
+  _syncKeyboardVisibility() {
+    const focusedNode = this.engine.context.focus ?? null;
+    const shouldShowKeyboard = Boolean(
+      focusedNode &&
+      focusedNode.type === "input" &&
+      focusedNode.editable !== false
+    );
+
+    if (shouldShowKeyboard) {
+      this.keyboardLayer?.show?.();
+      return;
+    }
+
+    this.keyboardLayer?.hide?.();
   }
 }

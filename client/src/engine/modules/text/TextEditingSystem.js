@@ -60,7 +60,7 @@ export class TextEditingSystem {
     this.keyboard.destroy();
     this.pointer.destroy();
     this.clipboard.destroy();
-    this.menu.destroy();
+    this.menu?.destroy?.();
     this.pastePrompt.destroy();
   }
 
@@ -120,7 +120,7 @@ export class TextEditingSystem {
     this.activeNode = null;
 
     this.keyboard.disable();
-    this.menu.hide();
+    this.menu?.hide?.();
     this.pastePrompt.hide();
 
     this.invalidate();
@@ -168,6 +168,13 @@ export class TextEditingSystem {
   }
 
   insertText(text) {
+    if (!text) return;
+
+    if (this.selection.hasRange()) {
+      this.replaceSelection(text);
+      return;
+    }
+
     const index = this.caret.index;
     const { newText, newCaret } = this.model.insertAt(index, text);
 
