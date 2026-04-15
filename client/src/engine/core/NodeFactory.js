@@ -1,53 +1,65 @@
-import { DefaultBehavior } from "../nodes/behaviours/defaultBehaviour.js";
-import { SceneNode } from "../nodes/sceneNode.js";
-import { behaviorRegistry } from "../registries/behaviourReg.js";
-import { componentRegistry } from "../registries/componentReg.js";
-
 export class NodeFactory {
   constructor() {}
 
   create(vnode) {
-    const { type, props } = vnode;
+    const { type, props = {} } = vnode;
 
-    // 1. Resolve behavior class
     const BehaviorClass =
-      behaviorRegistry.get(type) ??
-      DefaultBehavior; // fallback for unknown types
+      behaviorRegistry.get(type) ?? DefaultBehavior;
 
-    // 2. Create SceneNode (behavior attached after)
     const node = new SceneNode({
       id: props.id,
+      key: props.key,
       style: props.style,
       visible: props.visible ?? true,
       behavior: null
     });
 
-    // 3. Attach behavior instance
     node.behavior = new BehaviorClass(node);
 
-    // 4. Apply props (except style/components)
     this.applyProps(node, props);
-
-    // 5. Attach components
     this.applyComponents(node, props);
 
-    // 6. Recursively create children
-    vnode.children.forEach(childVNode => {
+    if (node.behavior.onInit) {
+      node.behavior.onInit(props);
+    }
+
+    const children = vnode.children ?? [];
+
+    for (const childVNode of children) {
       const childNode = this.create(childVNode);
       node.add(childNode);
       childVNode._node = childNode;
-    });
+    }
 
-    // 7. Attach SceneNode reference to VNode
+    if (node.behavior.onMount) {
+      queueMicrotask(() => node.behavior.onMount());
+    }
+
     vnode._node = node;
 
     return node;
   }
 
   applyProps(node, props) {
+    const RESERVED = new Set(["id", "style", "components", "visible", "children"]);
+
     for (const key in props) {
-      if (key === "style" || key === "components") continue;
-      node[key] = props[key];
+      if (RESERVED.has(key)) continue;
+
+      const value = props[key];
+
+      // Event binding
+      if (key.startsWith("on") && typeof value === "function") {
+        node.behavior?.[key]?.(value);
+        continue;
+      }
+
+      if (key in node) {
+        node[key] = value;
+      } else {
+        node.setProp?.(key, value);
+      }
     }
   }
 
@@ -55,14 +67,12 @@ export class NodeFactory {
     const comps = props.components ?? [];
 
     for (const comp of comps) {
-      // If user passed a string, resolve via registry
       if (typeof comp === "string") {
         const CompClass = componentRegistry.get(comp);
         if (CompClass) {
           node.addComponent(new CompClass());
         }
       } else {
-        // Direct instance
         node.addComponent(comp);
       }
     }

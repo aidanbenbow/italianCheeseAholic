@@ -1,0 +1,93 @@
+{
+  "formId": "form_2",
+  "type": "FORM",
+  "title": "Raporte de progresse",
+
+  "layout": {
+    "type": "column",
+    "gap": 12
+  },
+
+  "fields": [
+    {
+      "id": "name",
+      "label": "Name",
+      "type": "input",
+      "placeholder": "Name",
+      "validation": [
+        { "type": "required", "message": "Name is required" },
+        {
+          "type": "pattern",
+          "value": "^[a-zA-Z ]+$",
+          "message": "Name can only contain letters and spaces."
+        }
+      ]
+    },
+    {
+      "id": "message",
+      "label": "Message",
+      "type": "input",
+      "placeholder": "Message",
+      "validation": [
+        { "type": "required", "message": "Message is required" },
+        {
+          "type": "maxLength",
+          "value": 10,
+          "message": "Message must be at most 10 characters long."
+        }
+      ]
+    },
+    {
+      "id": "feedback",
+      "label": "Feedback",
+      "type": "textarea",
+      "placeholder": "Feedback",
+      "validation": [
+        { "type": "required", "message": "Feedback is required" },
+        {
+          "type": "minLength",
+          "value": 20,
+          "message": "Feedback must be at least 20 characters long."
+        }
+      ]
+    }
+  ],
+
+  "components": [
+    {
+      "type": "button",
+      "label": "Submit",
+      "action": "submit"
+    }
+  ],
+
+  "actions": {
+    "submit": {
+      "type": "save",
+      "collection": "responses",
+      "onSuccess": [
+        { "type": "resetForm" },
+        { "type": "toast", "message": "Form submitted successfully!" }
+      ]
+    }
+  },
+
+  "theme": {
+    "page": {
+      "background": "#304576"
+    },
+    "label": {
+      "color": "#b2abab",
+      "font": "12px sans-serif"
+    },
+    "input": {
+      "background": "#7989ad",
+      "borderColor": "#374151",
+      "color": "#ebe5e1"
+    },
+    "button": {
+      "background": "#E5E7EB",
+      "textColor": "#111827"
+    }
+  }
+}
