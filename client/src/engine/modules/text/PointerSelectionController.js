@@ -69,6 +69,15 @@ export class PointerSelectionController {
 
     const { x, y } = this.getSceneCoords(e);
 
+    // Ignore taps outside the active input node (e.g. virtual keyboard keys).
+    // Those taps travel through the main canvas but should not reset the
+    // caret / selection so that a subsequent virtual key-press can replace
+    // the selected text correctly.
+    const b = node.bounds;
+    if (x < b.x || x > b.x + b.width || y < b.y || y > b.y + b.height) {
+      return;
+    }
+
     const index = getCaretIndexFromMousePosition(node, x, y);
 
     // Begin selection
