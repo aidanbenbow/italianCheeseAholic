@@ -20,6 +20,19 @@ const debugMarkerBehavior = {
   }
 };
 
+function childOnlyHitTest(point) {
+  if (!this.visible) return null;
+
+  for (let index = this.children.length - 1; index >= 0; index -= 1) {
+    const child = this.children[index];
+    const local = child.globalToLocal(point);
+    const hit = child.hitTest(local);
+    if (hit) return hit;
+  }
+
+  return null;
+}
+
 export class SystemUIModule extends BaseModule {
   constructor(engine) {
     super(engine);
@@ -51,7 +64,8 @@ export class SystemUIModule extends BaseModule {
         background: "transparent"
       }
     });
-    this.root.hitTestable = false;
+    this.root.hitTestable = true;
+    this.root.hitTest = childOnlyHitTest;
 
     // Initialize sub-modules
     this.popupLayer = PopupModule.create(this.engine);
@@ -61,7 +75,6 @@ export class SystemUIModule extends BaseModule {
     this.popupLayer.root.hitTestable = false;
     this.keyboardLayer.root.hitTestable = false;
     this.toastLayer.root.hitTestable = false;
-    this.dropDownLayer.root.hitTestable = false;
 
     // Attach pipeline FIRST so it is listening before children are added
     const systemPipeline = this.engine.renderer?.getPipeline("system");

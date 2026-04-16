@@ -29,6 +29,8 @@ export function createCrudStore({
   saveUrl,
   method = "POST",
   itemsKey = "items",
+  idKey,
+  itemUrl,
   onSaved,
   onSaveError,
   onLoadError,
@@ -38,6 +40,7 @@ export function createCrudStore({
 
   const store = createAppStore({
     [itemsKey]: [],
+    currentItem: null,
     isLoading: false,
     isSaving: false,
     error: null,
@@ -64,15 +67,21 @@ export function createCrudStore({
     }
   }
 
-async function loadOne(id) {
+  async function loadOne(id) {
     store.set({ isLoading: true, error: null });
     try {
-      const response = await fetch(`forms/${id}`);
+      const targetUrl = typeof itemUrl === "function"
+        ? itemUrl(id)
+        : `${listUrl.replace(/\/$/, "")}/${encodeURIComponent(id)}`;
+
+      const response = await fetch(targetUrl);
       const payload = await response.json();
+
       if (!response.ok || !payload?.ok) {
         throw new Error(payload?.error ?? "Failed to load");
       }
-        store.set({ isLoading: false, currentItem: payload.data });
+
+      store.set({ isLoading: false, currentItem: payload.data });
       return payload.data;
     } catch (error) {
       store.set({ isLoading: false, error: error?.message ?? "Load failed" });
@@ -98,12 +107,28 @@ async function loadOne(id) {
       }
 
       const savedItem = payload?.data ?? itemPayload;
-      store.update(itemsKey, (items) => [savedItem, ...items]);
-      store.set({ isSaving: false });
+      store.update(itemsKey, (items) => {
+        if (!idKey || !savedItem?.[idKey]) {
+          return [savedItem, ...items];
+        }
+
+        const existingIndex = items.findIndex((item) => item?.[idKey] === savedItem[idKey]);
+
+        if (existingIndex === -1) {
+          return [savedItem, ...items];
+        }
+
+        const nextItems = items.slice();
+        nextItems[existingIndex] = savedItem;
+        return nextItems;
+      });
+      store.set({ isSaving: false, currentItem: savedItem });
       onSaved?.(savedItem);
+      return savedItem;
     } catch (error) {
       store.set({ isSaving: false, error: error?.message ?? "Save failed" });
       onSaveError?.(error);
+      return null;
     }
   }
 

@@ -105,7 +105,18 @@ export class InputNode extends SceneNode {
   // -------------------------------------------------------
 
   setValue(v) {
+    const previousValue = this.text.value;
     this.text.setValue(v);
+    const nextValue = this.text.value;
+
+    if (nextValue !== previousValue) {
+      this.emit("value:changed", {
+        node: this,
+        value: nextValue,
+        previousValue
+      });
+    }
+
     this.requestLayout();
   }
 

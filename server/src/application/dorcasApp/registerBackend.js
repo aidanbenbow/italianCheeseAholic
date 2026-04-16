@@ -1,11 +1,11 @@
 
-import { registerDorcasHandlers } from "./handlers/dorcasHandlers.js";
+import { registerDorcasHandlers, registerDorcasHttpRoutes } from "./handlers/dorcasHandlers.js";
 import { DorcasRepository } from "./repositories/DorcasRepository.js";
 import DorcasService from "./services/DorcasService.js";
 
 
 
-export function registerBackend(container, io) {
+export function registerBackend(container, io, app) {
   container.singleton("dorcasRepository", () =>
     new DorcasRepository(container.resolve("docClient"))
   );
@@ -15,4 +15,8 @@ export function registerBackend(container, io) {
   );
 
   registerDorcasHandlers(io, container);
+
+  if (app) {
+    registerDorcasHttpRoutes(app, container, io);
+  }
 }

@@ -1,6 +1,5 @@
 import {
   PutCommand,
-  UpdateCommand,
   DeleteCommand,
   GetCommand,
   ScanCommand
@@ -9,10 +8,10 @@ import {
 export class DorcasRepository {
   constructor(docClient) {
     this.docClient = docClient;
-    this.tableName = "dorcas_reports";
+    this.tableName = process.env.DORCAS_REPORTS_TABLE || "progress_reports_table";
   }
 
-  async createReport(report) {
+  async saveReport(report) {
     await this.docClient.send(
       new PutCommand({
         TableName: this.tableName,
@@ -22,18 +21,21 @@ export class DorcasRepository {
     return report;
   }
 
+  async createReport(report) {
+    return this.saveReport(report);
+  }
+
   async updateReport(reportId, updates) {
-    const params = {
-      TableName: this.tableName,
-      Key: { reportId },
-      UpdateExpression: "SET #data = :data",
-      ExpressionAttributeNames: { "#data": "data" },
-      ExpressionAttributeValues: { ":data": updates },
-      ReturnValues: "ALL_NEW"
+    const existing = await this.fetchReport(reportId);
+    const nextReport = {
+      ...(existing ?? {}),
+      ...updates,
+      reportId,
+      createdAt: existing?.createdAt ?? updates?.createdAt ?? Date.now(),
+      updatedAt: Date.now(),
     };
 
-    const result = await this.docClient.send(new UpdateCommand(params));
-    return result.Attributes;
+    return this.saveReport(nextReport);
   }
 
   async fetchReport(reportId) {
@@ -47,12 +49,22 @@ export class DorcasRepository {
   }
 
   async fetchAllReports() {
-    const result = await this.docClient.send(
-      new ScanCommand({
-        TableName: this.tableName
-      })
-    );
-    return result.Items || [];
+    const items = [];
+    let ExclusiveStartKey;
+
+    do {
+      const result = await this.docClient.send(
+        new ScanCommand({
+          TableName: this.tableName,
+          ExclusiveStartKey,
+        })
+      );
+
+      items.push(...(result.Items || []));
+      ExclusiveStartKey = result.LastEvaluatedKey;
+    } while (ExclusiveStartKey);
+
+    return items.sort((a, b) => (b?.updatedAt ?? 0) - (a?.updatedAt ?? 0));
   }
 
   async deleteReport(reportId) {
