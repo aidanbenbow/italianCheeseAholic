@@ -15,6 +15,18 @@
  * layout computation and stored on each line, so no live canvas state is needed.
  */
 export class TextLayoutBridge {
+  static _resolveLineOffsetX(lineWidth, contentWidth, align = "left") {
+    if (align === "right" || align === "end") {
+      return Math.max(0, contentWidth - lineWidth);
+    }
+
+    if (align === "center") {
+      return Math.max(0, (contentWidth - lineWidth) / 2);
+    }
+
+    return 0;
+  }
+
   /**
    * Convert a TextModel character index → scene-space pixel (x, y).
    *
@@ -25,6 +37,8 @@ export class TextLayoutBridge {
   static indexToPosition(node, index) {
     const nodeLayout = node?.layout;
     const textLayout = node?.text?.getLayout?.();
+    const textOffsetY = Number(nodeLayout?.textOffsetY) || 0;
+    const alignMode = nodeLayout?.textAlignMode ?? "left";
 
     if (!node || !nodeLayout || !textLayout) {
       return { x: 0, y: 0, lineIndex: 0 };
@@ -33,16 +47,25 @@ export class TextLayoutBridge {
     const { lines, lineHeight } = textLayout;
 
     if (!lines || lines.length === 0) {
-      return { x: nodeLayout.contentX, y: nodeLayout.contentY, lineIndex: 0 };
+      return {
+        x: nodeLayout.contentX,
+        y: nodeLayout.contentY + textOffsetY,
+        lineIndex: 0
+      };
     }
 
     const line = textLayout.getLineForIndex?.(index) ?? lines[lines.length - 1];
     const lineIndex = Math.max(0, lines.indexOf(line));
+    const lineOffsetX = this._resolveLineOffsetX(
+      line?.width ?? 0,
+      nodeLayout.contentWidth ?? 0,
+      alignMode
+    );
     const localCaret = textLayout.getCaretPosition?.(index) ?? { x: 0, y: lineIndex * lineHeight };
 
     return {
-      x: nodeLayout.contentX + localCaret.x,
-      y: nodeLayout.contentY + localCaret.y,
+      x: nodeLayout.contentX + lineOffsetX + localCaret.x,
+      y: nodeLayout.contentY + textOffsetY + localCaret.y,
       lineIndex,
     };
   }
@@ -61,13 +84,39 @@ export class TextLayoutBridge {
 
     if (!node || !nodeLayout || !textLayout) return 0;
 
-    const { lines } = textLayout;
+    const { lines, lineHeight } = textLayout;
 
     if (!lines || lines.length === 0) return 0;
 
-    const relativeY = sceneY - nodeLayout.contentY;
-    const relativeX = sceneX - nodeLayout.contentX;
+    const textOffsetY = Number(nodeLayout?.textOffsetY) || 0;
+    const alignMode = nodeLayout?.textAlignMode ?? "left";
 
-    return textLayout.getIndexFromPosition?.(relativeX, relativeY) ?? 0;
+    const relativeY = sceneY - (nodeLayout.contentY + textOffsetY);
+    const rawLineIndex = Math.floor(relativeY / Math.max(1, lineHeight || 0));
+    const lineIndex = Math.max(0, Math.min(rawLineIndex, lines.length - 1));
+    const line = lines[lineIndex];
+
+    if (!line) {
+      return lines[lines.length - 1]?.endIndex ?? 0;
+    }
+
+    const lineOffsetX = this._resolveLineOffsetX(
+      line.width ?? 0,
+      nodeLayout.contentWidth ?? 0,
+      alignMode
+    );
+    const relativeX = sceneX - (nodeLayout.contentX + lineOffsetX);
+
+    const charWidths = line.charWidths ?? [];
+    let currentX = 0;
+    for (let i = 0; i < line.text.length; i++) {
+      const width = charWidths[i] ?? 0;
+      if (relativeX < currentX + (width / 2)) {
+        return line.startIndex + i;
+      }
+      currentX += width;
+    }
+
+    return line.endIndex;
   }
 }

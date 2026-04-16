@@ -5,6 +5,18 @@ import { resolveContentRect, resolvePadding } from "./textBoxHelpers.js";
 import { renderBoxBackground, renderBoxBorder } from "./boxRenderHelpers.js";
 import { TextLayoutEngine } from "../../modules/text/layout/TextLayoutEngine.js";
 export class InputBehavior extends Behavior {
+  resolveLineOffsetX(lineWidth, contentWidth, align = "left") {
+    if (align === "right" || align === "end") {
+      return Math.max(0, contentWidth - lineWidth);
+    }
+
+    if (align === "center") {
+      return Math.max(0, (contentWidth - lineWidth) / 2);
+    }
+
+    return 0;
+  }
+
   measure(node, constraints, ctx) {
     const style = node.style ?? {};
     const font = node.text?.font ?? style.font ?? "14px sans-serif";
@@ -186,15 +198,28 @@ export class InputBehavior extends Behavior {
       })
       : textLayout;
 
+    const horizontalAlign = style.textAlign ?? "left";
+    const activeTextHeight = textLayout.totalHeight ?? textLayout.lineHeight ?? 0;
+    const activeTextOffsetY = Math.max(0, (content.contentHeight - activeTextHeight) / 2);
+
+    if (node.layout) {
+      node.layout.textOffsetX = 0;
+      node.layout.textOffsetY = activeTextOffsetY;
+      node.layout.textAlignMode = horizontalAlign;
+    }
+
     ctx.save();
     ctx.beginPath();
-    ctx.rect(content.contentX, content.contentY, content.contentWidth, content.contentHeight);
+    ctx.rect(content.contentX, content.contentY, content.contentWidth, content.contentHeight + 2);
     ctx.clip();
 
     for (let index = 0; index < renderLayout.lines.length; index++) {
       const line = renderLayout.lines[index];
-      const lineY = content.contentY + index * renderLayout.lineAdvance;
-      ctx.fillText(line.text, content.contentX, lineY);
+      const lineWidth = line.width ?? 0;
+      const lineOffsetX = this.resolveLineOffsetX(lineWidth, content.contentWidth, horizontalAlign);
+      const lineX = content.contentX + lineOffsetX;
+      const lineY = content.contentY + activeTextOffsetY + index * renderLayout.lineAdvance;
+      ctx.fillText(line.text, lineX, lineY);
     }
 
     ctx.restore();

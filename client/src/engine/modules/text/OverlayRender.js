@@ -7,6 +7,18 @@ export class OverlayRenderer {
     this.system = system;
   }
 
+  resolveLineOffsetX(lineWidth, contentWidth, align = "left") {
+    if (align === "right" || align === "end") {
+      return Math.max(0, contentWidth - lineWidth);
+    }
+
+    if (align === "center") {
+      return Math.max(0, (contentWidth - lineWidth) / 2);
+    }
+
+    return 0;
+  }
+
   render(ctx) {
     const node = this.system.activeNode;
     const nodeLayout = node?.layout;
@@ -36,8 +48,8 @@ export class OverlayRenderer {
     ctx.font = font;
     ctx.fillStyle = "rgba(0, 120, 215, 0.3)";
 
-    const textOriginX = nodeLayout.contentX;
-    const textOriginY = nodeLayout.contentY;
+    const alignMode = nodeLayout.textAlignMode ?? "left";
+    const textOriginY = nodeLayout.contentY + (Number(nodeLayout.textOffsetY) || 0);
 
     let lineIndex = 0;
 
@@ -52,7 +64,11 @@ export class OverlayRenderer {
         const before = line.text.slice(0, relStart);
         const selected = line.text.slice(relStart, relEnd);
 
-        const lineStartX = textOriginX;
+        const lineStartX = nodeLayout.contentX + this.resolveLineOffsetX(
+          line.width ?? 0,
+          nodeLayout.contentWidth ?? 0,
+          alignMode
+        );
         const selX = lineStartX + ctx.measureText(before).width;
         const selY = textOriginY + lineIndex * lineHeight;
         const selWidth = ctx.measureText(selected).width;
