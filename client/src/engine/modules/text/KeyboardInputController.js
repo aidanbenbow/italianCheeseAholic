@@ -189,6 +189,7 @@ export class KeyboardInputController {
 
   shouldInsertFromKeyDown(e) {
     if (!e || this.composing || e.isComposing) return false;
+    if (e.isVirtual !== true) return false;
     if (e.ctrlKey || e.metaKey || e.altKey) return false;
     if (e.key === "Dead") return false;
     return typeof e.key === "string" && e.key.length === 1;

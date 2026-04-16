@@ -78,26 +78,38 @@ function createPanelBehavior(view) {
       const contentX = bounds.x + KEYBOARD_PADDING;
       const contentY = bounds.y + KEYBOARD_PADDING + KEYBOARD_HEADER_HEIGHT;
       const contentWidth = Math.max(0, bounds.width - (KEYBOARD_PADDING * 2));
+      const rowsHeightBudget = Math.max(0, bounds.height - (KEYBOARD_PADDING * 2) - KEYBOARD_HEADER_HEIGHT);
+      const rowCount = rows.length;
+
+      const rowGap = rowCount > 1
+        ? Math.max(2, Math.min(KEYBOARD_ROW_GAP, Math.floor(rowsHeightBudget / Math.max(4, rowCount * 3))))
+        : 0;
+      const rowHeight = rowCount > 0
+        ? Math.max(20, Math.floor((rowsHeightBudget - (rowGap * Math.max(0, rowCount - 1))) / rowCount))
+        : KEYBOARD_ROW_HEIGHT;
 
       let rowY = contentY;
       for (const row of rows) {
         const totalUnits = row.reduce((sum, child) => sum + (child.keySpec?.units ?? 1), 0);
-        const gapWidth = KEYBOARD_KEY_GAP * Math.max(0, row.length - 1);
+        const keyGap = row.length > 1
+          ? Math.max(2, Math.min(KEYBOARD_KEY_GAP, Math.floor(contentWidth / Math.max(12, row.length * 6))))
+          : 0;
+        const gapWidth = keyGap * Math.max(0, row.length - 1);
         const unitWidth = totalUnits > 0
-          ? Math.max(20, (contentWidth - gapWidth) / totalUnits)
+          ? Math.max(6, (contentWidth - gapWidth) / totalUnits)
           : 0;
 
         let keyX = contentX;
         for (const child of row) {
           const units = child.keySpec?.units ?? 1;
-          const keyWidth = Math.max(28, unitWidth * units);
+          const keyWidth = Math.max(6, unitWidth * units);
 
-          child.applyLayout({ x: keyX, y: rowY, width: keyWidth, height: KEYBOARD_ROW_HEIGHT }, ctx);
+          child.applyLayout({ x: keyX, y: rowY, width: keyWidth, height: rowHeight }, ctx);
 
-          keyX += keyWidth + KEYBOARD_KEY_GAP;
+          keyX += keyWidth + keyGap;
         }
 
-        rowY += KEYBOARD_ROW_HEIGHT + KEYBOARD_ROW_GAP;
+        rowY += rowHeight + rowGap;
       }
     },
 

@@ -17,6 +17,7 @@ function createVirtualKeyboardEvent(key, options = {}) {
     ctrlKey: false,
     metaKey: false,
     altKey: false,
+    isVirtual: true,
     isComposing: false,
     defaultPrevented: false,
     propagationStopped: false,
