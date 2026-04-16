@@ -35,7 +35,7 @@ export function createInputNode(options = {}) {
     ...options,
     style: {
       width: 320,
-      height: 40,
+      height: 44,
       background: "#111827",
       borderColor: "#374151",
       focusBorderColor: "#60A5FA",
@@ -43,6 +43,7 @@ export function createInputNode(options = {}) {
       placeholderColor: "#6B7280",
       font: "14px sans-serif",
       paddingLeft: 10,
+      paddingRight: 10,
       ...options.style
     },
     behavior: options.behavior ?? createBehaviorFromRegistry("input"),

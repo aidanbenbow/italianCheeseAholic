@@ -3,16 +3,24 @@ function mergeStyle(...styles) {
 }
 
 function createReportPayload(schema, values, currentReport) {
-  const now = Date.now();
+  const now = new Date();
+  const nowIso = now.toISOString();
+  const year2 = now.getUTCFullYear() % 100;
+  const reportId = currentReport?.reportId ?? currentReport?.id ?? `report-${now.getTime()}`;
 
   return {
-    reportId: currentReport?.reportId ?? `report-${now}`,
-    formId: schema.formId,
-    title: schema.title ?? "Progress report",
-    values,
-    reporterName: values.name ?? "",
-    createdAt: currentReport?.createdAt ?? now,
-    updatedAt: now,
+    reportId,
+    id: currentReport?.id ?? reportId,
+    name: values.name ?? "",
+    message: values.message ?? "",
+    report: values.feedback ?? "",
+    createdAt: currentReport?.createdAt ?? nowIso,
+    updatedAt: nowIso,
+    messageYear: Number.isFinite(currentReport?.messageYear) ? currentReport.messageYear : year2,
+    reportYear: Number.isFinite(currentReport?.reportYear) ? currentReport.reportYear : year2,
+    status: currentReport?.status ?? "sponsored",
+    used: typeof currentReport?.used === "boolean" ? currentReport.used : true,
+    letter: typeof currentReport?.letter === "boolean" ? currentReport.letter : false,
   };
 }
 
@@ -281,7 +289,8 @@ export function createFormFromSchema(engine, schema, { crud = null, initialRepor
             width: 420,
             minHeight: field.type === "textarea" ? 100 : 40,
             paddingLeft: 12,
-            paddingTop: field.type === "textarea" ? 10 : 0
+            paddingTop: field.type === "textarea" ? 12 : 0,
+            paddingBottom: field.type === "textarea" ? 12 : 0
           },
           theme.input
         )

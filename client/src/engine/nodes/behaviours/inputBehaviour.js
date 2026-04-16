@@ -10,12 +10,12 @@ export class InputBehavior extends Behavior {
     const font = node.text?.font ?? style.font ?? "14px sans-serif";
     const text = node.text?.value ?? "";
     const autoGrow = node.autoGrow !== false;
-    const lineGap = this.toFinite(style.lineGap, 2);
+    const lineGap = this.toFinite(style.lineGap, 3);
     const padding = resolvePadding(style, this.toFinite.bind(this), {
       left: 10,
       right: 10,
-      top: 6,
-      bottom: 0
+      top: 8,
+      bottom: 8
     });
 
     const { maxWidth, maxHeight } = this.normalizeConstraints(constraints);
@@ -100,8 +100,8 @@ export class InputBehavior extends Behavior {
     const padding = resolvePadding(style, this.toFinite.bind(this), {
       left: 10,
       right: 10,
-      top: 6,
-      bottom: 0
+      top: 8,
+      bottom: 8
     });
 
     const x = bounds?.x ?? 0;
@@ -127,7 +127,7 @@ export class InputBehavior extends Behavior {
     const layout = node.layout ?? node.bounds;
     const style = node.style ?? {};
     const focused = Boolean(node.focused);
-    const lineGap = this.toFinite(style.lineGap, 2);
+    const lineGap = this.toFinite(style.lineGap, 3);
 
     renderBoxBackground(ctx, layout, style, {
       defaultBackground: "#111827",
@@ -159,8 +159,8 @@ export class InputBehavior extends Behavior {
     const padding = resolvePadding(style, this.toFinite.bind(this), {
       left: 10,
       right: 10,
-      top: 6,
-      bottom: 0
+      top: 8,
+      bottom: 8
     });
     const content = resolveContentRect(layout, node.layout, padding);
 

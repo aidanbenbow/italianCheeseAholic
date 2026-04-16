@@ -9,7 +9,7 @@ export class TextBehavior extends Behavior {
 		const style = node.style ?? {};
 		const font = style.font ?? "14px sans-serif";
 		const wrap = Boolean(style.wrap || style.multiline);
-		const lineGap = this.toFinite(style.lineGap, 2);
+		const lineGap = this.toFinite(style.lineGap, 3);
 
 		const { maxWidth, maxHeight } = this.normalizeConstraints(constraints);
 
@@ -81,7 +81,7 @@ export class TextBehavior extends Behavior {
 	render(node, ctx) {
 		const style = node.style ?? {};
 		const wrap = Boolean(style.wrap || style.multiline);
-		const lineGap = this.toFinite(style.lineGap, 2);
+		const lineGap = this.toFinite(style.lineGap, 3);
 		const padding = resolvePadding(style, this.toFinite.bind(this));
 		const content = resolveContentRect(node.bounds, node.layout, padding);
 
