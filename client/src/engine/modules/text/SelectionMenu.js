@@ -85,8 +85,8 @@ function createToolbarButtonNode({ id, label, index, context, onPress }) {
     context,
     behavior: toolbarButtonBehavior,
     style: {
-      x: TOOLBAR_PADDING,
-      y: TOOLBAR_PADDING + (index * (TOOLBAR_BUTTON_HEIGHT + TOOLBAR_GAP)),
+      x: TOOLBAR_PADDING + (index * (TOOLBAR_BUTTON_WIDTH + TOOLBAR_GAP)),
+      y: TOOLBAR_PADDING,
       width: TOOLBAR_BUTTON_WIDTH,
       height: TOOLBAR_BUTTON_HEIGHT
     }
@@ -160,7 +160,7 @@ export class SelectionMenu {
 
     this.mode = "input-toolbar";
     this._rebuildToolbarIfNeeded(this._getInputToolbarActions());
-    this._showLeftOfNode(node);
+    this._showAboveNode(node);
     this.inputToolbarPinned = true;
   }
 
@@ -171,15 +171,15 @@ export class SelectionMenu {
     this.mode = "selection";
     this.inputToolbarPinned = true;
     this._rebuildToolbarIfNeeded(this._getSelectionToolbarActions());
-    this._showLeftOfNode(activeNode);
+    this._showAboveNode(activeNode);
   }
 
-  _showLeftOfNode(node) {
+  _showAboveNode(node) {
     const toolbarWidth = this.toolbarNode?.style?.width ?? 0;
     const toolbarHeight = this.toolbarNode?.style?.height ?? 0;
     const gap = 8;
-    const anchorX = node.layout.x - gap - (toolbarWidth / 2);
-    const anchorY = node.layout.y + ((node.layout.height - toolbarHeight) / 2);
+    const anchorX = node.layout.x + (node.layout.width / 2);
+    const anchorY = node.layout.y - gap - toolbarHeight;
 
     this.showAt(anchorX, anchorY);
   }
@@ -245,8 +245,8 @@ export class SelectionMenu {
 
   _createToolbarNode(actions) {
     const context = this.system.engine.context;
-    const width = TOOLBAR_BUTTON_WIDTH + (TOOLBAR_PADDING * 2);
-    const height = (actions.length * TOOLBAR_BUTTON_HEIGHT) + ((actions.length - 1) * TOOLBAR_GAP) + (TOOLBAR_PADDING * 2);
+    const width = (actions.length * TOOLBAR_BUTTON_WIDTH) + ((actions.length - 1) * TOOLBAR_GAP) + (TOOLBAR_PADDING * 2);
+    const height = TOOLBAR_BUTTON_HEIGHT + (TOOLBAR_PADDING * 2);
 
     const toolbarNode = new SceneNode({
       id: "text-toolbar-node",
