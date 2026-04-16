@@ -163,6 +163,22 @@ function validateField(field, value) {
         return rule.message || `${field.label ?? field.id} format is invalid`;
       }
     }
+
+    if (rule.type === "maxWords") {
+      const max = Number(rule.value ?? Infinity);
+      const wordCount = `${value ?? ""}`.trim().split(/\s+/).filter(Boolean).length;
+      if (wordCount > max) {
+        return rule.message || `${field.label ?? field.id} must be at most ${max} words`;
+      }
+    }
+
+    if (rule.type === "minWords") {
+      const min = Number(rule.value ?? 0);
+      const wordCount = `${value ?? ""}`.trim().split(/\s+/).filter(Boolean).length;
+      if (wordCount < min) {
+        return rule.message || `${field.label ?? field.id} must be at least ${min} words`;
+      }
+    }
   }
 
   return null;

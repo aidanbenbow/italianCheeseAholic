@@ -31,9 +31,9 @@
       "validation": [
         { "type": "required", "message": "Message is required" },
         {
-          "type": "maxLength",
-          "value": 10,
-          "message": "Message must be at most 10 characters long."
+          "type": "maxWords",
+          "value": 35,
+          "message": "Message must be at most 35 words."
         }
       ]
     },
@@ -45,9 +45,9 @@
       "validation": [
         { "type": "required", "message": "Feedback is required" },
         {
-          "type": "minLength",
-          "value": 20,
-          "message": "Feedback must be at least 20 characters long."
+          "type": "maxWords",
+          "value": 150,
+          "message": "Report must be at most 150 words."
         }
       ]
     }

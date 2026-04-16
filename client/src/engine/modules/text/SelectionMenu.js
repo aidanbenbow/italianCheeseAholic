@@ -85,8 +85,8 @@ function createToolbarButtonNode({ id, label, index, context, onPress }) {
     context,
     behavior: toolbarButtonBehavior,
     style: {
-      x: TOOLBAR_PADDING + (index * (TOOLBAR_BUTTON_WIDTH + TOOLBAR_GAP)),
-      y: TOOLBAR_PADDING,
+      x: TOOLBAR_PADDING,
+      y: TOOLBAR_PADDING + (index * (TOOLBAR_BUTTON_HEIGHT + TOOLBAR_GAP)),
       width: TOOLBAR_BUTTON_WIDTH,
       height: TOOLBAR_BUTTON_HEIGHT
     }
@@ -158,27 +158,30 @@ export class SelectionMenu {
   showForInputNode(node) {
     if (!node?.layout) return;
 
-    if (this.mode === "input-toolbar" && this.visible && this.inputToolbarPinned) {
-      return;
-    }
-
-    const anchorX = node.layout.x + (node.layout.width / 2);
-    const anchorY = Math.max(8, node.layout.y - 40);
-
     this.mode = "input-toolbar";
     this._rebuildToolbarIfNeeded(this._getInputToolbarActions());
-    this.showAt(anchorX, anchorY);
+    this._showLeftOfNode(node);
     this.inputToolbarPinned = true;
   }
 
   showForSelection() {
-    const caretPos = this.system.caret.getScenePosition();
-    if (!caretPos) return;
+    const activeNode = this.system.activeNode;
+    if (!activeNode?.layout) return;
 
     this.mode = "selection";
-    this.inputToolbarPinned = false;
+    this.inputToolbarPinned = true;
     this._rebuildToolbarIfNeeded(this._getSelectionToolbarActions());
-    this.showAt(caretPos.x, caretPos.y - 40);
+    this._showLeftOfNode(activeNode);
+  }
+
+  _showLeftOfNode(node) {
+    const toolbarWidth = this.toolbarNode?.style?.width ?? 0;
+    const toolbarHeight = this.toolbarNode?.style?.height ?? 0;
+    const gap = 8;
+    const anchorX = node.layout.x - gap - (toolbarWidth / 2);
+    const anchorY = node.layout.y + ((node.layout.height - toolbarHeight) / 2);
+
+    this.showAt(anchorX, anchorY);
   }
 
   showAt(sceneX, sceneY) {
@@ -220,15 +223,7 @@ export class SelectionMenu {
     return [
       { label: "Cut", onPress: () => this.system.clipboard.cut() },
       { label: "Copy", onPress: () => this.system.clipboard.copy() },
-      { label: "Paste", onPress: () => this.system.clipboard.paste() },
-      {
-        label: "Bold",
-        onPress: () => {
-          const selected = this.system.selection.getRangeText();
-          this.system.replaceSelection("**" + selected + "**");
-          this.hide();
-        }
-      }
+      { label: "Paste", onPress: () => this.system.clipboard.paste() }
     ];
   }
 
@@ -236,14 +231,7 @@ export class SelectionMenu {
     return [
       { label: "Cut", onPress: () => this.system.clipboard.cut() },
       { label: "Copy", onPress: () => this.system.clipboard.copy() },
-      { label: "Paste", onPress: () => this.system.clipboard.paste() },
-      {
-        label: "Bold",
-        onPress: () => {
-          if (!this.system.selection.hasRange()) return;
-          this.system.replaceSelection("**" + this.system.selection.getRangeText() + "**");
-        }
-      }
+      { label: "Paste", onPress: () => this.system.clipboard.paste() }
     ];
   }
 
@@ -257,8 +245,8 @@ export class SelectionMenu {
 
   _createToolbarNode(actions) {
     const context = this.system.engine.context;
-    const width = (actions.length * TOOLBAR_BUTTON_WIDTH) + ((actions.length - 1) * TOOLBAR_GAP) + (TOOLBAR_PADDING * 2);
-    const height = TOOLBAR_BUTTON_HEIGHT + (TOOLBAR_PADDING * 2);
+    const width = TOOLBAR_BUTTON_WIDTH + (TOOLBAR_PADDING * 2);
+    const height = (actions.length * TOOLBAR_BUTTON_HEIGHT) + ((actions.length - 1) * TOOLBAR_GAP) + (TOOLBAR_PADDING * 2);
 
     const toolbarNode = new SceneNode({
       id: "text-toolbar-node",
