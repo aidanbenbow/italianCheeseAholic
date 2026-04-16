@@ -19,7 +19,11 @@ function createReportPayload(schema, values, currentReport) {
 function getReportValues(report) {
   if (!report || typeof report !== "object") return {};
 
-  if (report.values && typeof report.values === "object") {
+  if (
+    report.values &&
+    typeof report.values === "object" &&
+    Object.keys(report.values).length > 0
+  ) {
     return report.values;
   }
 
@@ -80,8 +84,32 @@ function resolveSuggestionAnchor(inputNode) {
 function applyReportToInputs(report, inputs) {
   const values = getReportValues(report);
 
+  const aliases = {
+    feedback: ["feedback", "report"],
+    report: ["report", "feedback"],
+    message: ["message"],
+    name: ["name", "reporterName"],
+  };
+
+  const readByAliases = (key) => {
+    const keys = aliases[key] ?? [key];
+
+    for (const candidate of keys) {
+      if (values?.[candidate] != null) return values[candidate];
+      if (report?.[candidate] != null) return report[candidate];
+      if (report?.data?.[candidate] != null) return report.data[candidate];
+      if (report?.values?.[candidate] != null) return report.values[candidate];
+    }
+
+    return null;
+  };
+
   for (const [fieldId, inputNode] of inputs.entries()) {
-    inputNode.value = values[fieldId] == null ? "" : `${values[fieldId]}`;
+    const resolvedValue = fieldId === "name"
+      ? (readByAliases("name") ?? getReportName(report))
+      : readByAliases(fieldId);
+
+    inputNode.value = resolvedValue == null ? "" : `${resolvedValue}`;
   }
 }
 
@@ -275,7 +303,18 @@ export function createFormFromSchema(engine, schema, { crud = null, initialRepor
   const dropdownId = `${schema.formId}-report-name-suggestions`;
 
   if (nameInputNode && dropdownLayer && crud?.state?.reports) {
+    let isInteractingWithDropdown = false;
+    let hideTimeoutId = null;
+
+    const clearHideTimer = () => {
+      if (hideTimeoutId == null) return;
+      clearTimeout(hideTimeoutId);
+      hideTimeoutId = null;
+    };
+
     const showNameSuggestions = ({ forceAll = false } = {}) => {
+      clearHideTimer();
+
       if (suppressNameSuggestions || engine.context.focus !== nameInputNode) {
         dropdownLayer.hide(dropdownId);
         return;
@@ -326,6 +365,7 @@ export function createFormFromSchema(engine, schema, { crud = null, initialRepor
     };
 
     const hideNameSuggestions = () => {
+      clearHideTimer();
       dropdownLayer.hide(dropdownId);
     };
 
@@ -339,15 +379,46 @@ export function createFormFromSchema(engine, schema, { crud = null, initialRepor
         return;
       }
 
-      hideNameSuggestions();
+      clearHideTimer();
+      hideTimeoutId = setTimeout(() => {
+        if (isInteractingWithDropdown || suppressNameSuggestions) {
+          return;
+        }
+        hideNameSuggestions();
+      }, 80);
+    };
+
+    const handleSceneInputEvent = (eventPayload) => {
+      const targetId = String(eventPayload?.targetId ?? "");
+      const eventType = String(eventPayload?.type ?? "");
+      const isDropdownTarget = targetId.startsWith(`dropdown-${dropdownId}`);
+
+      if (eventType === "pointerdown" && isDropdownTarget) {
+        isInteractingWithDropdown = true;
+        clearHideTimer();
+        return;
+      }
+
+      if (eventType === "pointerup") {
+        if (isInteractingWithDropdown) {
+          isInteractingWithDropdown = false;
+        }
+
+        if (engine.context.focus !== nameInputNode && !suppressNameSuggestions) {
+          hideNameSuggestions();
+        }
+      }
     };
 
     nameInputNode.on("value:changed", handleNameValueChanged);
     const offFocusChanged = engine.on("focus:changed", handleFocusChanged);
+    const offSceneInputEvent = engine.on("input:scene-event", handleSceneInputEvent);
 
     page.onDispose(() => {
       nameInputNode.off("value:changed", handleNameValueChanged);
       offFocusChanged?.();
+      offSceneInputEvent?.();
+      clearHideTimer();
       hideNameSuggestions();
     });
   }

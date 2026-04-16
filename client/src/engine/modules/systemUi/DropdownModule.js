@@ -79,18 +79,38 @@ const dropdownPanelBehavior = {
     const itemHeight = node.itemHeight ?? 34;
     const bounds = node.bounds ?? { x: 0, y: 0, width: 0, height: 0 };
 
-    const localX = Number.isFinite(event.x) ? event.x - bounds.x : -1;
-    const localY = Number.isFinite(event.y) ? event.y - bounds.y : -1;
+    const toLocalAxis = (rawValue, start, size) => {
+      if (!Number.isFinite(rawValue)) return -1;
 
+      const globalLocal = rawValue - start;
+      if (globalLocal >= 0 && globalLocal <= size) {
+        return globalLocal;
+      }
+
+      if (rawValue >= 0 && rawValue <= size) {
+        return rawValue;
+      }
+
+      return -1;
+    };
+
+    const localY = toLocalAxis(event.y, bounds.y, bounds.height);
+
+    const itemCount = node.items?.length ?? 0;
     const hoveredIndex = localY >= 0
       ? Math.floor(localY / itemHeight)
       : -1;
-
-    const itemCount = node.items?.length ?? 0;
-    const inRange = hoveredIndex >= 0 && hoveredIndex < itemCount && localX >= 0 && localX <= bounds.width;
+    const hasItems = itemCount > 0;
+    const clampedIndex = hoveredIndex < 0
+      ? -1
+      : Math.max(0, Math.min(itemCount - 1, hoveredIndex));
+    const selectableIndex = clampedIndex >= 0
+      ? clampedIndex
+      : (Number.isInteger(node.hoveredIndex) ? node.hoveredIndex : -1);
+    const inRange = hasItems && selectableIndex >= 0 && selectableIndex < itemCount;
 
     if (event.type === "pointermove" || event.type === "pointerenter") {
-      node.hoveredIndex = inRange ? hoveredIndex : -1;
+      node.hoveredIndex = inRange ? selectableIndex : -1;
       node.requestRender?.();
       return false;
     }
@@ -103,19 +123,19 @@ const dropdownPanelBehavior = {
     }
 
     if (event.type === "pointerdown") {
-      node.pressedIndex = inRange ? hoveredIndex : -1;
+      node.pressedIndex = inRange ? selectableIndex : -1;
       node.requestRender?.();
+
+      if (inRange) {
+        node.onSelectIndex?.(selectableIndex);
+      }
+
       return false;
     }
 
     if (event.type === "pointerup") {
-      const shouldSelect = inRange && node.pressedIndex === hoveredIndex;
       node.pressedIndex = -1;
       node.requestRender?.();
-
-      if (shouldSelect) {
-        node.onSelectIndex?.(hoveredIndex);
-      }
 
       return false;
     }
