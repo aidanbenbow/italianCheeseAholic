@@ -53,7 +53,7 @@ export const KEYBOARD_LAYOUT = [
     { kind: "char",      key: "b" },
     { kind: "char",      key: "n" },
     { kind: "char",      key: "m" },
-    { kind: "backspace", label: "Backspace", units: 1.75 }
+    { kind: "backspace", label: "⌫", units: 1.75 }
   ],
   [
     { kind: "space", label: "Space", units: 5 },

@@ -2,6 +2,12 @@ function mergeStyle(...styles) {
   return Object.assign({}, ...styles.filter(Boolean));
 }
 
+const SUGGESTION_CONFIG = {
+  itemHeight: 34,
+  maxHeight: 220,
+  hideDelay: 80
+};
+
 function createReportPayload(schema, values, currentReport) {
   const now = new Date();
   const nowIso = now.toISOString();
@@ -24,52 +30,49 @@ function createReportPayload(schema, values, currentReport) {
   };
 }
 
-function getReportValues(report) {
+function normalizeReport(report) {
   if (!report || typeof report !== "object") return {};
 
-  if (
-    report.values &&
-    typeof report.values === "object" &&
-    Object.keys(report.values).length > 0
-  ) {
-    return report.values;
-  }
+  return {
+    ...report,
+    ...(report.data || {}),
+    ...(report.values || {})
+  };
+}
 
-  if (report.data && typeof report.data === "object") {
-    return report.data;
-  }
-
-  return report;
+function getReportValues(report) {
+  return normalizeReport(report);
 }
 
 function getReportName(report) {
-  if (!report || typeof report !== "object") return "";
-
-  const candidate = report.reporterName
-    ?? report.values?.name
-    ?? report.data?.name
-    ?? report.name;
+  const normalized = normalizeReport(report);
+  const candidate = normalized.reporterName ?? normalized.name;
 
   return typeof candidate === "string" ? candidate.trim() : "";
 }
 
-function filterReportsByName(reports, query) {
+function buildSuggestionItems(reports, query, getLabel) {
   const normalizedQuery = String(query ?? "").trim().toLowerCase();
 
   return reports
     .map((report) => ({
       report,
-      label: getReportName(report)
+      label: getLabel(report)
     }))
-    .filter((entry) => entry.label)
-    .filter((entry) => {
+    .filter((item) => item.label)
+    .filter((item) => {
       if (!normalizedQuery) return true;
-      return entry.label.toLowerCase().includes(normalizedQuery);
+      return item.label.toLowerCase().includes(normalizedQuery);
     })
-    .sort((left, right) => left.label.localeCompare(right.label));
+    .sort((a, b) => a.label.localeCompare(b.label));
 }
 
-function resolveSuggestionAnchor(inputNode) {
+function resolveSuggestionAnchor(inputNode, {
+  engine = null,
+  itemCount = 0,
+  itemHeight = 34,
+  maxHeight = 220
+} = {}) {
   const bounds = inputNode?.bounds ?? {};
   const style = inputNode?.style ?? {};
 
@@ -82,15 +85,216 @@ function resolveSuggestionAnchor(inputNode) {
   const x = Number.isFinite(bounds.x) ? bounds.x : 0;
   const y = Number.isFinite(bounds.y) ? bounds.y : 0;
 
+  const requestedHeight = Math.min(maxHeight, Math.max(0, itemCount * itemHeight));
+
+  const keyboardBounds = engine?.systemUI?.keyboardLayer?.view?.panelNode?.bounds ?? null;
+  const keyboardVisible = engine?.systemUI?.keyboardLayer?.isVisible === true;
+  const keyboardTop = keyboardVisible && Number.isFinite(keyboardBounds?.y)
+    ? keyboardBounds.y
+    : Infinity;
+
+  const belowY = y + height + 4;
+  const wouldIntersectKeyboard = (belowY + requestedHeight) > (keyboardTop - 4);
+
+  const preferredY = wouldIntersectKeyboard
+    ? Math.max(8, y - requestedHeight - 4)
+    : belowY;
+
   return {
     x,
-    y: y + height + 4,
+    y: preferredY,
     width,
   };
 }
 
-function applyReportToInputs(report, inputs) {
-  const values = getReportValues(report);
+function getDropdownStyle(anchor, {
+  itemHeight = SUGGESTION_CONFIG.itemHeight,
+  maxHeight = SUGGESTION_CONFIG.maxHeight
+} = {}) {
+  return {
+    itemHeight,
+    style: {
+      width: anchor.width,
+      maxHeight,
+      background: "#F8FAFC",
+      borderColor: "#CBD5E1"
+    }
+  };
+}
+
+function createSuggestionController({ hideDelay = 80 } = {}) {
+  let suppress = false;
+  let interacting = false;
+  let hideTimeout = null;
+  let forceAll = false;
+
+  return {
+    shouldShow(engine, inputNode) {
+      return !suppress && engine.context.focus === inputNode;
+    },
+
+    getQuery(inputNode) {
+      return forceAll ? "" : inputNode.value;
+    },
+
+    forceOpen() {
+      forceAll = true;
+      Promise.resolve().then(() => {
+        forceAll = false;
+      });
+    },
+
+    onSelectStart() {
+      suppress = true;
+    },
+
+    onSelectEnd() {
+      Promise.resolve().then(() => {
+        suppress = false;
+      });
+    },
+
+    startInteraction() {
+      interacting = true;
+      this.clearHideTimer();
+    },
+
+    endInteraction() {
+      interacting = false;
+    },
+
+    isInteracting() {
+      return interacting;
+    },
+
+    scheduleHide(callback) {
+      this.clearHideTimer();
+      hideTimeout = setTimeout(callback, hideDelay);
+    },
+
+    clearHideTimer() {
+      if (hideTimeout) {
+        clearTimeout(hideTimeout);
+        hideTimeout = null;
+      }
+    },
+
+    dispose() {
+      this.clearHideTimer();
+    }
+  };
+}
+
+function attachNameSuggestions({
+  engine,
+  inputNode,
+  dropdownLayer,
+  reportsState,
+  getLabel,
+  onSelect
+}) {
+  if (!inputNode || !dropdownLayer || !reportsState) {
+    return () => {};
+  }
+
+  const dropdownId = `suggestions-${inputNode.id}`;
+  const controller = createSuggestionController({ hideDelay: SUGGESTION_CONFIG.hideDelay });
+
+  const show = () => {
+    controller.clearHideTimer();
+
+    if (!controller.shouldShow(engine, inputNode)) {
+      dropdownLayer.hide(dropdownId);
+      return;
+    }
+
+    const query = controller.getQuery(inputNode);
+    const items = buildSuggestionItems(reportsState.value ?? [], query, getLabel);
+
+    if (!items.length) {
+      dropdownLayer.hide(dropdownId);
+      return;
+    }
+
+    const itemHeight = SUGGESTION_CONFIG.itemHeight;
+    const maxHeight = SUGGESTION_CONFIG.maxHeight;
+    const anchor = resolveSuggestionAnchor(inputNode, {
+      engine,
+      itemCount: items.length,
+      itemHeight,
+      maxHeight
+    });
+
+    dropdownLayer.show(
+      dropdownId,
+      items.map(({ label, report }) => ({
+        label,
+        onSelect: () => {
+          controller.onSelectStart();
+          onSelect(report);
+          controller.onSelectEnd();
+        }
+      })),
+      { x: anchor.x, y: anchor.y },
+      getDropdownStyle(anchor, { itemHeight, maxHeight })
+    );
+  };
+
+  const hide = () => {
+    controller.clearHideTimer();
+    dropdownLayer.hide(dropdownId);
+  };
+
+  const handleValueChanged = () => show();
+
+  const handleFocusChanged = () => {
+    if (engine.context.focus === inputNode) {
+      controller.forceOpen();
+      show();
+      return;
+    }
+
+    controller.scheduleHide(() => {
+      if (!controller.isInteracting()) {
+        hide();
+      }
+    });
+  };
+
+  const handleSceneEvent = (eventPayload) => {
+    const targetId = String(eventPayload?.targetId ?? "");
+    const type = String(eventPayload?.type ?? "");
+
+    if (type === "pointerdown" && targetId.startsWith(`dropdown-${dropdownId}`)) {
+      controller.startInteraction();
+      return;
+    }
+
+    if (type === "pointerup") {
+      controller.endInteraction();
+
+      if (engine.context.focus !== inputNode) {
+        hide();
+      }
+    }
+  };
+
+  inputNode.on("value:changed", handleValueChanged);
+  const offFocus = engine.on("focus:changed", handleFocusChanged);
+  const offScene = engine.on("input:scene-event", handleSceneEvent);
+
+  return () => {
+    inputNode.off("value:changed", handleValueChanged);
+    offFocus?.();
+    offScene?.();
+    controller.dispose();
+    hide();
+  };
+}
+
+function resolveReportValue(report, key) {
+  const normalizedKey = key === "name" ? "name" : key;
+  const normalized = normalizeReport(report);
 
   const aliases = {
     feedback: ["feedback", "report"],
@@ -99,24 +303,32 @@ function applyReportToInputs(report, inputs) {
     name: ["name", "reporterName"],
   };
 
-  const readByAliases = (key) => {
-    const keys = aliases[key] ?? [key];
+  const keys = aliases[normalizedKey] ?? [normalizedKey];
 
-    for (const candidate of keys) {
-      if (values?.[candidate] != null) return values[candidate];
-      if (report?.[candidate] != null) return report[candidate];
-      if (report?.data?.[candidate] != null) return report.data[candidate];
-      if (report?.values?.[candidate] != null) return report.values[candidate];
-    }
+  for (const candidate of keys) {
+    if (normalized?.[candidate] != null) return normalized[candidate];
+  }
 
-    return null;
-  };
+  if (normalizedKey === "name") {
+    return getReportName(report);
+  }
 
+  return null;
+}
+
+function mapReportToValues(report, fieldIds) {
+  const mapped = {};
+
+  for (const fieldId of fieldIds) {
+    mapped[fieldId] = resolveReportValue(report, fieldId);
+  }
+
+  return mapped;
+}
+
+function applyValuesToInputs(values, inputs) {
   for (const [fieldId, inputNode] of inputs.entries()) {
-    const resolvedValue = fieldId === "name"
-      ? (readByAliases("name") ?? getReportName(report))
-      : readByAliases(fieldId);
-
+    const resolvedValue = values?.[fieldId];
     inputNode.value = resolvedValue == null ? "" : `${resolvedValue}`;
   }
 }
@@ -256,7 +468,6 @@ async function runSubmitAction(engine, schema, values, inputs, statusNode, crud,
 export function createFormFromSchema(engine, schema, { crud = null, initialReport = null } = {}) {
   const theme = schema.theme ?? {};
   let currentReport = initialReport;
-  let suppressNameSuggestions = false;
 
   const page = engine.ui.createScrollableNode({
     id: `dorcas-form-${schema.formId}`,
@@ -325,126 +536,25 @@ export function createFormFromSchema(engine, schema, { crud = null, initialRepor
 
   const nameInputNode = inputs.get("name") ?? null;
   const dropdownLayer = engine.systemUI?.dropDownLayer ?? null;
-  const dropdownId = `${schema.formId}-report-name-suggestions`;
 
   if (nameInputNode && dropdownLayer && crud?.state?.reports) {
-    let isInteractingWithDropdown = false;
-    let hideTimeoutId = null;
-
-    const clearHideTimer = () => {
-      if (hideTimeoutId == null) return;
-      clearTimeout(hideTimeoutId);
-      hideTimeoutId = null;
-    };
-
-    const showNameSuggestions = ({ forceAll = false } = {}) => {
-      clearHideTimer();
-
-      if (suppressNameSuggestions || engine.context.focus !== nameInputNode) {
-        dropdownLayer.hide(dropdownId);
-        return;
+    const disposeNameSuggestions = attachNameSuggestions({
+      engine,
+      inputNode: nameInputNode,
+      dropdownLayer,
+      reportsState: crud.state.reports,
+      getLabel: getReportName,
+      onSelect: (report) => {
+        currentReport = report;
+        const mappedValues = mapReportToValues(report, inputs.keys());
+        applyValuesToInputs(mappedValues, inputs);
+        statusNode.text = report?.reportId ? `Loaded ${report.reportId}` : "Loaded report";
+        statusNode.requestRender?.();
       }
-
-      const query = forceAll ? "" : nameInputNode.value;
-      const matchingReports = filterReportsByName(
-        crud.state.reports.value ?? [],
-        query
-      );
-
-      if (matchingReports.length === 0) {
-        dropdownLayer.hide(dropdownId);
-        return;
-      }
-
-      const anchor = resolveSuggestionAnchor(nameInputNode);
-
-      dropdownLayer.show(
-        dropdownId,
-        matchingReports.map(({ label, report }) => ({
-          label,
-          onSelect: () => {
-            suppressNameSuggestions = true;
-            currentReport = report;
-            applyReportToInputs(report, inputs);
-            statusNode.text = report?.reportId ? `Loaded ${report.reportId}` : "Loaded report";
-            statusNode.requestRender?.();
-            Promise.resolve().then(() => {
-              suppressNameSuggestions = false;
-            });
-          }
-        })),
-        {
-          x: anchor.x,
-          y: anchor.y
-        },
-        {
-          itemHeight: 34,
-          style: {
-            width: anchor.width,
-            maxHeight: 220,
-            background: "#F8FAFC",
-            borderColor: "#CBD5E1"
-          }
-        }
-      );
-    };
-
-    const hideNameSuggestions = () => {
-      clearHideTimer();
-      dropdownLayer.hide(dropdownId);
-    };
-
-    const handleNameValueChanged = () => {
-      showNameSuggestions();
-    };
-
-    const handleFocusChanged = () => {
-      if (engine.context.focus === nameInputNode) {
-        showNameSuggestions({ forceAll: true });
-        return;
-      }
-
-      clearHideTimer();
-      hideTimeoutId = setTimeout(() => {
-        if (isInteractingWithDropdown || suppressNameSuggestions) {
-          return;
-        }
-        hideNameSuggestions();
-      }, 80);
-    };
-
-    const handleSceneInputEvent = (eventPayload) => {
-      const targetId = String(eventPayload?.targetId ?? "");
-      const eventType = String(eventPayload?.type ?? "");
-      const isDropdownTarget = targetId.startsWith(`dropdown-${dropdownId}`);
-
-      if (eventType === "pointerdown" && isDropdownTarget) {
-        isInteractingWithDropdown = true;
-        clearHideTimer();
-        return;
-      }
-
-      if (eventType === "pointerup") {
-        if (isInteractingWithDropdown) {
-          isInteractingWithDropdown = false;
-        }
-
-        if (engine.context.focus !== nameInputNode && !suppressNameSuggestions) {
-          hideNameSuggestions();
-        }
-      }
-    };
-
-    nameInputNode.on("value:changed", handleNameValueChanged);
-    const offFocusChanged = engine.on("focus:changed", handleFocusChanged);
-    const offSceneInputEvent = engine.on("input:scene-event", handleSceneInputEvent);
+    });
 
     page.onDispose(() => {
-      nameInputNode.off("value:changed", handleNameValueChanged);
-      offFocusChanged?.();
-      offSceneInputEvent?.();
-      clearHideTimer();
-      hideNameSuggestions();
+      disposeNameSuggestions?.();
     });
   }
 

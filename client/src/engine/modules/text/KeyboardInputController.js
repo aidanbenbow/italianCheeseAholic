@@ -16,6 +16,11 @@ export class KeyboardInputController {
 
     this._engineKeydownOff = null;
     this._engineKeyupOff = null;
+
+    this._pendingInputEcho = "";
+    this._pendingInputAt = 0;
+    this._lastVirtualKey = "";
+    this._lastVirtualKeyAt = 0;
   }
 
   // -------------------------------------------------------
@@ -93,6 +98,13 @@ export class KeyboardInputController {
   onKeyDown(e) {
     if (!this.enabled || !this.system.activeNode || !e) return;
 
+    if (e.isVirtual === true) {
+      this._lastVirtualKey = String(e.key ?? "");
+      this._lastVirtualKeyAt = Date.now();
+    } else if (this.shouldSuppressMirroredNativeKey(e)) {
+      return;
+    }
+
     // Prevent browser scrolling
     if (["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(e.key)) {
       e.preventDefault();
@@ -165,6 +177,7 @@ export class KeyboardInputController {
 
     if (this.shouldInsertFromKeyDown(e)) {
       e.preventDefault();
+      this.registerInputEcho(e.key);
       this.system.insertText(e.key);
     }
   }
@@ -183,16 +196,41 @@ export class KeyboardInputController {
 
     const text = e.data;
     if (text) {
+      if (this.isInputEcho(text)) return;
       this.system.insertText(text);
     }
   }
 
   shouldInsertFromKeyDown(e) {
     if (!e || this.composing || e.isComposing) return false;
-    if (e.isVirtual !== true) return false;
     if (e.ctrlKey || e.metaKey || e.altKey) return false;
     if (e.key === "Dead") return false;
     return typeof e.key === "string" && e.key.length === 1;
+  }
+
+  registerInputEcho(key) {
+    this._pendingInputEcho = String(key ?? "");
+    this._pendingInputAt = Date.now();
+  }
+
+  isInputEcho(text) {
+    const now = Date.now();
+    return (
+      String(text ?? "") === this._pendingInputEcho &&
+      (now - this._pendingInputAt) <= 120
+    );
+  }
+
+  shouldSuppressMirroredNativeKey(e) {
+    if (!e || e.isVirtual === true) return false;
+
+    const key = String(e.key ?? "");
+    if (key.length !== 1) return false;
+
+    return (
+      key === this._lastVirtualKey &&
+      (Date.now() - this._lastVirtualKeyAt) <= 120
+    );
   }
 
   // -------------------------------------------------------
