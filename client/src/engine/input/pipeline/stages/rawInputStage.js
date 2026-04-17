@@ -3,12 +3,24 @@
 import { InputPipelineStage } from "../inputPipelineStage.js";
 
 
+// How long (ms) to suppress synthetic mouse events after a real touch event.
+const TOUCH_MOUSE_SUPPRESS_MS = 350;
+
 export class RawInputStage extends InputPipelineStage {
   constructor({ canvas, pipeline, config } = {}) {
     super({ pipeline, config });
     this.canvas = canvas;
     this.listeners = [];
+    this._lastTouchTime = 0;
     this._bindDomEvents();
+  }
+
+  /** Returns true if this mouse event is a browser-synthesized duplicate of a touch. */
+  _isSyntheticMouseEvent(domEvent) {
+    return (
+      domEvent instanceof MouseEvent &&
+      Date.now() - this._lastTouchTime < TOUCH_MOUSE_SUPPRESS_MS
+    );
   }
 
   _bindDomEvents() {
@@ -24,14 +36,34 @@ export class RawInputStage extends InputPipelineStage {
       this.listeners.push({ type, listener, options });
     };
 
-    add("mousedown", event => handler(event, "mousedown"));
-    add("mousemove", event => handler(event, "mousemove"));
-    add("mouseup", event => handler(event, "mouseup"));
+    // Mouse events — skip if they are synthesized from a preceding touch.
+    add("mousedown", event => {
+      if (this._isSyntheticMouseEvent(event)) return;
+      handler(event, "mousedown");
+    });
+    add("mousemove", event => {
+      if (this._isSyntheticMouseEvent(event)) return;
+      handler(event, "mousemove");
+    });
+    add("mouseup", event => {
+      if (this._isSyntheticMouseEvent(event)) return;
+      handler(event, "mouseup");
+    });
     add("wheel", event => handler(event, "wheel"), { passive: false });
 
-    add("touchstart", event => handler(event, "touchstart"), { passive: false });
-    add("touchmove", event => handler(event, "touchmove"), { passive: false });
-    add("touchend", event => handler(event, "touchend"));
+    // Touch events — stamp the timestamp so mouse suppression kicks in.
+    add("touchstart", event => {
+      this._lastTouchTime = Date.now();
+      handler(event, "touchstart");
+    }, { passive: false });
+    add("touchmove", event => {
+      this._lastTouchTime = Date.now();
+      handler(event, "touchmove");
+    }, { passive: false });
+    add("touchend", event => {
+      this._lastTouchTime = Date.now();
+      handler(event, "touchend");
+    });
   }
 
   _unbindDomEvents() {
