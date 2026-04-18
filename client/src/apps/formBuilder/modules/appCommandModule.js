@@ -11,12 +11,18 @@ export class AppCommandsModule extends BaseModule {
 
  saveForm = async (formData) => {
   try {
+    const answers = formData?.answers ?? {
+      name: formData?.name,
+      institution: formData?.institution,
+      feedback: formData?.feedback,
+    };
+
     const res = await fetch(`/forms/${formData.formId}/submissions`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
       },
-      body: JSON.stringify(formData.answers)
+      body: JSON.stringify(answers)
     });
 
     const payload = await res.json();
