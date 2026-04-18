@@ -97,12 +97,12 @@ export function createViewFormPage(engine, formId) {
           marginTop: 12,
         },
         command: "form:save",
-        commandArgs: ({ values }) => ({
+        commandArgs: ({ refs }) => ({
           formId,
           answers: {
-            name: values.name,
-            institution: values.institution,
-            feedback: values.feedback,
+            name: refs?.formInstance?.state?.values?.name,
+            institution: refs?.formInstance?.state?.values?.institution,
+            feedback: refs?.formInstance?.state?.values?.feedback,
           },
         }),
       }),

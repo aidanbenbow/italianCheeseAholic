@@ -1,17 +1,15 @@
-function collectInputValues(inputs) {
-  const values = {};
+import { createFormInstance } from "./formInstance.js";
 
-  for (const [id, node] of inputs.entries()) {
-    values[id] = node.value ?? "";
-  }
-
-  return values;
-}
-
-export function compileFormDsl(engine, dsl, { initialValues = {}, onSubmit = null } = {}) {
+export function compileFormDsl(engine, dsl, { initialValues = {}, initialReport = null, onSubmit = null, formInstance = null } = {}) {
   if (!dsl || dsl.kind !== "form") {
     throw new Error("compileFormDsl expected a form DSL node");
   }
+
+  const resolvedFormInstance = formInstance ?? createFormInstance({
+    schema: dsl,
+    initialValues,
+    initialReport,
+  });
 
   const page = engine.ui.createScrollableNode({
     id: dsl.id,
@@ -33,7 +31,10 @@ export function compileFormDsl(engine, dsl, { initialValues = {}, onSubmit = nul
     inputs: new Map(),
     fields: new Map(),
     actions: new Map(),
+    formInstance: resolvedFormInstance,
   };
+
+  const inputDisposers = [];
 
   for (const child of dsl.children ?? []) {
     if (child.kind === "status") {
@@ -74,12 +75,21 @@ export function compileFormDsl(engine, dsl, { initialValues = {}, onSubmit = nul
         style: child.inputStyle ?? {},
       });
 
-      if (initialValues?.[child.id] != null) {
-        inputNode.value = `${initialValues[child.id]}`;
-      }
-
       refs.fields.set(child.id, child);
       refs.inputs.set(child.id, inputNode);
+      resolvedFormInstance.registerInput(child.id, inputNode);
+
+      const handleValueChanged = () => {
+        resolvedFormInstance.setValue(child.id, inputNode.value ?? "");
+        resolvedFormInstance.setTouched(child.id, true);
+      };
+
+      inputNode.on("value:changed", handleValueChanged);
+      inputDisposers.push(() => {
+        inputNode.off("value:changed", handleValueChanged);
+        resolvedFormInstance.unregisterInput(child.id);
+      });
+
       engine.ui.mountNode(inputNode, page);
       continue;
     }
@@ -92,10 +102,12 @@ export function compileFormDsl(engine, dsl, { initialValues = {}, onSubmit = nul
         command: child.command ?? null,
         commandArgs: child.command
           ? () => {
+              const values = resolvedFormInstance.collectValues();
+
               if (typeof child.commandArgs === "function") {
                 return child.commandArgs({
                   action: child,
-                  values: collectInputValues(refs.inputs),
+                  values,
                   refs,
                   dsl,
                 });
@@ -107,10 +119,15 @@ export function compileFormDsl(engine, dsl, { initialValues = {}, onSubmit = nul
         onPress: child.command
           ? null
           : async () => {
+              const values = resolvedFormInstance.collectValues();
+              for (const fieldId of refs.inputs.keys()) {
+                resolvedFormInstance.setTouched(fieldId, true);
+              }
+
               if (typeof child.onPress === "function") {
                 await child.onPress({
                   action: child,
-                  values: collectInputValues(refs.inputs),
+                  values,
                   refs,
                   dsl,
                 });
@@ -121,7 +138,7 @@ export function compileFormDsl(engine, dsl, { initialValues = {}, onSubmit = nul
 
               await onSubmit({
                 action: child,
-                values: collectInputValues(refs.inputs),
+                values,
                 refs,
                 dsl,
               });
@@ -132,6 +149,12 @@ export function compileFormDsl(engine, dsl, { initialValues = {}, onSubmit = nul
       engine.ui.mountNode(buttonNode, page);
     }
   }
+
+  page.onDispose(() => {
+    for (const dispose of inputDisposers) {
+      dispose();
+    }
+  });
 
   return refs;
 }

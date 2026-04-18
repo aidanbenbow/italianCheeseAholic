@@ -12,9 +12,9 @@ export function renderForm(engine, form) {
     mapAction: (actionNode) => ({
       ...actionNode,
       command: "form:save",
-      commandArgs: ({ values }) => ({
+      commandArgs: ({ refs }) => ({
         formId: form.formId,
-        answers: values,
+        answers: { ...(refs?.formInstance?.state?.values ?? {}) },
       }),
     }),
   });

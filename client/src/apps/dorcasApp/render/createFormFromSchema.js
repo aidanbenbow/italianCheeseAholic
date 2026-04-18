@@ -1,10 +1,6 @@
 import { compileFormDsl } from "./compileFormDsl.js";
 import { buildFormDslFromSchema } from "./formDsl.js";
 
-function mergeStyle(...styles) {
-  return Object.assign({}, ...styles.filter(Boolean));
-}
-
 const SUGGESTION_CONFIG = {
   itemHeight: 34,
   maxHeight: 220,
@@ -329,13 +325,6 @@ function mapReportToValues(report, fieldIds) {
   return mapped;
 }
 
-function applyValuesToInputs(values, inputs) {
-  for (const [fieldId, inputNode] of inputs.entries()) {
-    const resolvedValue = values?.[fieldId];
-    inputNode.value = resolvedValue == null ? "" : `${resolvedValue}`;
-  }
-}
-
 function validateField(field, value) {
   const rules = field.validation ?? [];
 
@@ -403,14 +392,12 @@ function validateForm(schema, values) {
   return errors;
 }
 
-function runSuccessEffects(engine, action, inputs, statusNode) {
+function runSuccessEffects(engine, action, formInstance, statusNode) {
   const effects = action?.onSuccess ?? [];
 
   for (const effect of effects) {
     if (effect.type === "resetForm") {
-      for (const inputNode of inputs.values()) {
-        inputNode.value = "";
-      }
+      formInstance.resetValues();
       continue;
     }
 
@@ -426,7 +413,7 @@ function runSuccessEffects(engine, action, inputs, statusNode) {
   }
 }
 
-async function runSubmitAction(engine, schema, values, inputs, statusNode, crud, getCurrentReport, setCurrentReport) {
+async function runSubmitAction(engine, schema, values, formInstance, statusNode, crud) {
   const submitComponent = (schema.components ?? []).find((component) => component.type === "button");
   const actionKey = submitComponent?.action;
   const action = actionKey ? schema.actions?.[actionKey] : null;
@@ -439,8 +426,8 @@ async function runSubmitAction(engine, schema, values, inputs, statusNode, crud,
 
   if (action.type === "save") {
     const savedReport = crud
-      ? await crud.save(createReportPayload(schema, values, getCurrentReport()))
-      : createReportPayload(schema, values, getCurrentReport());
+      ? await crud.save(createReportPayload(schema, values, formInstance.getCurrentReport()))
+      : createReportPayload(schema, values, formInstance.getCurrentReport());
 
     if (!savedReport) {
       const message = crud?.state?.error?.value ?? "Failed to save report";
@@ -452,8 +439,8 @@ async function runSubmitAction(engine, schema, values, inputs, statusNode, crud,
       return;
     }
 
-    setCurrentReport(savedReport);
-    runSuccessEffects(engine, action, inputs, statusNode);
+    formInstance.setCurrentReport(savedReport);
+    runSuccessEffects(engine, action, formInstance, statusNode);
     return;
   }
 
@@ -461,40 +448,51 @@ async function runSubmitAction(engine, schema, values, inputs, statusNode, crud,
 }
 
 export function createFormFromSchema(engine, schema, { crud = null, initialReport = null } = {}) {
-  let currentReport = initialReport;
+  const initialValues = getReportValues(initialReport);
   const dsl = buildFormDslFromSchema(schema);
   const {
     page,
     statusNode,
     inputs,
     fields,
+    formInstance,
   } = compileFormDsl(engine, dsl, {
-    initialValues: getReportValues(initialReport),
-    onSubmit: async ({ values }) => {
+    initialValues,
+    initialReport,
+    onSubmit: async ({ values, refs }) => {
+      const formInstance = refs.formInstance;
       if (crud?.state?.isSaving?.value) return;
 
-      const errors = validateForm(schema, values);
+      formInstance.setValues(values, { markTouched: true });
+      formInstance.clearErrors();
+      const syncedValues = formInstance.collectValues();
+      const errors = validateForm(schema, syncedValues);
 
       if (errors.length > 0) {
-        statusNode.text = errors[0].message;
-        statusNode.requestRender?.();
+        for (const error of errors) {
+          formInstance.setError(error.fieldId, error.message);
+        }
+
+        if (statusNode) {
+          statusNode.text = errors[0].message;
+          statusNode.requestRender?.();
+        }
         engine.systemUI?.toastLayer?.show?.(errors[0].message);
         return;
       }
 
-      statusNode.text = "";
-      statusNode.requestRender?.();
+      if (statusNode) {
+        statusNode.text = "";
+        statusNode.requestRender?.();
+      }
+
       await runSubmitAction(
         engine,
         schema,
-        values,
-        inputs,
+        syncedValues,
+        formInstance,
         statusNode,
-        crud,
-        () => currentReport,
-        (nextReport) => {
-          currentReport = nextReport;
-        }
+        crud
       );
     }
   });
@@ -516,11 +514,15 @@ export function createFormFromSchema(engine, schema, { crud = null, initialRepor
       reportsState: crud.state.reports,
       getLabel: getReportName,
       onSelect: (report) => {
-        currentReport = report;
+        formInstance.setCurrentReport(report);
         const mappedValues = mapReportToValues(report, inputs.keys());
-        applyValuesToInputs(mappedValues, inputs);
-        statusNode.text = report?.reportId ? `Loaded ${report.reportId}` : "Loaded report";
-        statusNode.requestRender?.();
+        formInstance.setValues(mappedValues);
+        formInstance.clearErrors();
+
+        if (statusNode) {
+          statusNode.text = report?.reportId ? `Loaded ${report.reportId}` : "Loaded report";
+          statusNode.requestRender?.();
+        }
       }
     });
 
