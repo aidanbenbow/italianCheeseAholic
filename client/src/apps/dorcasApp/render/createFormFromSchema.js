@@ -1,5 +1,6 @@
 import { compileFormDsl } from "./compileFormDsl.js";
 import { buildFormDslFromSchema } from "./formDsl.js";
+import { isValidatableFieldType } from "../../../engine/uiEngine/fieldRegistry.js";
 
 const SUGGESTION_CONFIG = {
   itemHeight: 34,
@@ -66,6 +67,22 @@ function buildSuggestionItems(reports, query, getLabel) {
     .sort((a, b) => a.label.localeCompare(b.label));
 }
 
+/**
+ * Walk up the scene tree and subtract each ancestor's scroll offset so we get
+ * the actual rendered (screen-space) Y of the node, not its content-space Y.
+ */
+function getScreenY(node) {
+  let y = node?.bounds?.y ?? 0;
+  let current = node?.parent;
+  while (current) {
+    if (current.scroll) {
+      y -= current.scroll.offsetY || 0;
+    }
+    current = current.parent;
+  }
+  return y;
+}
+
 function resolveSuggestionAnchor(inputNode, {
   engine = null,
   itemCount = 0,
@@ -82,7 +99,8 @@ function resolveSuggestionAnchor(inputNode, {
     ? bounds.height
     : Number(style.height) || Number(style.minHeight) || 40;
   const x = Number.isFinite(bounds.x) ? bounds.x : 0;
-  const y = Number.isFinite(bounds.y) ? bounds.y : 0;
+  // Use screen-space Y so keyboard avoidance is in the same coordinate system.
+  const y = getScreenY(inputNode);
 
   const requestedHeight = Math.min(maxHeight, Math.max(0, itemCount * itemHeight));
 
@@ -383,7 +401,7 @@ function validateField(field, value) {
 function validateForm(schema, values) {
   const errors = [];
   for (const field of schema.fields ?? []) {
-    if (!["input", "textarea"].includes(field.type)) continue;
+    if (!isValidatableFieldType(field.type)) continue;
     const message = validateField(field, values[field.id]);
     if (message) {
       errors.push({ fieldId: field.id, message });

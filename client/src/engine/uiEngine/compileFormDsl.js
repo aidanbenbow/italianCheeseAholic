@@ -1,4 +1,5 @@
 import { createFormInstance } from "./formInstance.js";
+import { compileField } from "./fieldRegistry.js";
 
 export function compileFormDsl(engine, dsl, { initialValues = {}, initialReport = null, onSubmit = null, formInstance = null } = {}) {
   if (!dsl || dsl.kind !== "form") {
@@ -48,49 +49,8 @@ export function compileFormDsl(engine, dsl, { initialValues = {}, initialReport 
       continue;
     }
 
-    if (child.kind === "field" && child.control === "text") {
-      const textNode = engine.ui.createTextNode({
-        id: child.id,
-        style: child.textStyle ?? {},
-      });
-      textNode.text = child.text ?? "";
-      refs.fields.set(child.id, child);
-      engine.ui.mountNode(textNode, page);
-      continue;
-    }
-
     if (child.kind === "field") {
-      const labelNode = engine.ui.createTextNode({
-        id: `${dsl.formId}-${child.id}-label`,
-        style: child.labelStyle ?? {},
-      });
-      labelNode.text = child.label ?? child.id;
-      engine.ui.mountNode(labelNode, page);
-
-      const inputNode = engine.ui.createInputNode({
-        id: child.id,
-        placeholder: child.placeholder ?? "",
-        multiline: child.multiline === true,
-        autoGrow: child.autoGrow === true,
-        style: child.inputStyle ?? {},
-      });
-
-      refs.fields.set(child.id, child);
-      refs.inputs.set(child.id, inputNode);
-      resolvedFormInstance.registerInput(child.id, inputNode);
-
-      const handleValueChanged = () => {
-        resolvedFormInstance.setValue(child.id, inputNode.value ?? "");
-        resolvedFormInstance.setTouched(child.id, true);
-      };
-
-      inputNode.on("value:changed", handleValueChanged);
-      inputDisposers.push(() => {
-        inputNode.off("value:changed", handleValueChanged);
-        resolvedFormInstance.unregisterInput(child.id);
-      });
-
-      engine.ui.mountNode(inputNode, page);
+      compileField(engine, child, { page, refs, dsl, resolvedFormInstance, inputDisposers });
       continue;
     }
 

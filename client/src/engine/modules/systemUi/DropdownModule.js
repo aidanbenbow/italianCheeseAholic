@@ -199,6 +199,14 @@ export class DropdownModule {
     dropdown.itemHeight = itemHeight;
     dropdown.hoveredIndex = -1;
     dropdown.pressedIndex = -1;
+    // Set bounds immediately so the hit-test finds this node on the very
+    // first pointer event, before the async layout pass runs next frame.
+    dropdown.bounds = {
+      x: position.x ?? 0,
+      y: position.y ?? 0,
+      width,
+      height,
+    };
     dropdown.onSelectIndex = (index) => {
       const selected = items[index];
       selected?.onSelect?.(selected);

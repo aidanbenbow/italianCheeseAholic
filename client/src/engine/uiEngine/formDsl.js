@@ -1,3 +1,5 @@
+import { getControlForSchemaType } from "./fieldRegistry.js";
+
 function mergeStyle(...styles) {
   return Object.assign({}, ...styles.filter(Boolean));
 }
@@ -55,11 +57,7 @@ export const action = {
 };
 
 function createFieldDsl(fieldSchema, theme, options) {
-  const control = fieldSchema.type === "textarea"
-    ? "textarea"
-    : fieldSchema.type === "text"
-      ? "text"
-      : "input";
+  const control = getControlForSchemaType(fieldSchema.type);
 
   if (control === "text") {
     return field.text({
