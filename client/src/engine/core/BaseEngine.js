@@ -90,7 +90,7 @@ export class BaseEngine {
   emit(eventName, payload) {
     const listeners = this.eventListeners.get(eventName);
     const hasInternalListeners = Boolean(listeners?.size);
-
+console.log(listeners);
     if (hasInternalListeners) {
       for (const handler of listeners) {
         handler(payload);

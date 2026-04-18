@@ -83,9 +83,11 @@ export class SystemUIModule extends BaseModule {
    
 
       // Add layers AFTER setRoot so pipeline listeners are active when scheduleLayout fires
-      // Order = bottom-to-top: dropdown < keyboard < popup < toast
-      this.root.add(this.dropDownLayer.root);
+      // Order = bottom-to-top: keyboard < dropdown < popup < toast
+      // Keep dropdown above keyboard so the full-screen keyboard backdrop
+      // does not swallow dropdown hover/click interactions.
       this.root.add(this.keyboardLayer.root);
+      this.root.add(this.dropDownLayer.root);
       this.root.add(this.popupLayer.root);
       this.root.add(this.toastLayer.root);
 
